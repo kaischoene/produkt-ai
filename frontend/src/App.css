@@ -329,14 +329,35 @@ input[type="file"]:hover {
   color: white;
 }
 
-/* Error states */
-.error-boundary {
-  padding: 2rem;
-  text-align: center;
-  border: 1px solid #fecaca;
-  background-color: #fef2f2;
-  border-radius: 0.5rem;
-  color: #991b1b;
+/* Remove problematic universal transitions */
+/* Removed: button, a, input, textarea { transition: all 0.2s ease; } */
+
+/* Auth form stability - prevent unwanted movements */
+.auth-form-container {
+  position: relative;
+  transform: none !important;
+}
+
+.auth-form-container * {
+  transform: none !important;
+}
+
+/* Prevent layout shifts during form interactions */
+.auth-card {
+  min-height: 400px;
+  transition: none !important;
+}
+
+/* Stable form inputs */
+.auth-input {
+  transition: border-color 0.15s ease !important;
+  transform: none !important;
+}
+
+/* Prevent button movements */
+.auth-button {
+  transition: background-color 0.2s ease !important;
+  transform: none !important;
 }
 
 /* Loading spinner */
