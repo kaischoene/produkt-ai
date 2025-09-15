@@ -95,7 +95,7 @@ const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
       setToken(access_token);
-      toast.success('Konto erfolgreich erstellt! Sie haben 3 kostenlose Bilder zum Start.');
+      toast.success('Konto erfolgreich erstellt! Sie haben 12 kostenlose Bilder zum Start.');
       return true;
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Registrierung fehlgeschlagen');
