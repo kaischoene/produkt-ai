@@ -247,30 +247,39 @@ class ImageEngine:
             
             # Generate 4 images
             for i in range(4):
-                msg = UserMessage(text=f"{image_prompt}. Variation #{i+1}")
-                
-                # Generate image
-                text_response, images = await chat.send_message_multimodal_response(msg)
-                
-                if images and len(images) > 0:
-                    # Save the generated image
-                    image_data = images[0]
-                    image_bytes = base64.b64decode(image_data['data'])
+                try:
+                    msg = UserMessage(text=f"{image_prompt}. Variation #{i+1}")
                     
-                    # Create neutral filename
-                    filename = f"img_{job.id}_{i+1}.png"
-                    image_path = f"/tmp/{filename}"
+                    # Generate image
+                    text_response, images = await chat.send_message_multimodal_response(msg)
                     
-                    with open(image_path, "wb") as f:
-                        f.write(image_bytes)
-                    
-                    # For now, use placeholder URL
-                    image_url = f"/api/images/{job.id}_{i+1}"
-                    generated_images.append({
-                        "url": image_url,
-                        "filename": filename,
-                        "index": i+1
-                    })
+                    if images and len(images) > 0:
+                        # Save the generated image
+                        image_data = images[0]
+                        image_bytes = base64.b64decode(image_data['data'])
+                        
+                        # Create neutral filename
+                        filename = f"img_{job.id}_{i+1}.png"
+                        image_path = f"/tmp/{filename}"
+                        
+                        with open(image_path, "wb") as f:
+                            f.write(image_bytes)
+                        
+                        # For now, use placeholder URL
+                        image_url = f"/api/images/{job.id}_{i+1}"
+                        generated_images.append({
+                            "url": image_url,
+                            "filename": filename,
+                            "index": i+1
+                        })
+                        
+                        print(f"Generated image {i+1}/4 successfully")
+                    else:
+                        print(f"No image generated for variation {i+1}")
+                        
+                except Exception as e:
+                    print(f"Error generating image {i+1}: {str(e)}")
+                    continue
             
             if generated_images:
                 # Update job as completed
@@ -286,10 +295,12 @@ class ImageEngine:
                         }
                     }
                 )
+                print(f"Job {job.id} completed with {len(generated_images)} images")
             else:
                 raise Exception("ENGINE_ERROR: Keine Bilder generiert")
                 
         except Exception as e:
+            print(f"Emergent generation error: {str(e)}")
             raise Exception(f"Bildgenerierung fehlgeschlagen: {str(e)}")
 
 # Initialize Image Engine
