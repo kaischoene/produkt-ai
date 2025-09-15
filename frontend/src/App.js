@@ -802,14 +802,14 @@ const Dashboard = () => {
                     {isGenerating ? 'Ihre 4 Szenen werden generiert...' : `4 Bilder generieren (${user.credits} Credits verbleibend)`}
                   </Button>
 
-                  {user.credits <= 0 && (
+                  {user.credits < 4 && (
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                       <div className="flex items-center space-x-2 text-orange-700">
                         <AlertTriangle className="w-5 h-5" />
-                        <span className="font-medium">Keine Credits mehr vorhanden</span>
+                        <span className="font-medium">Nicht genügend Credits</span>
                       </div>
                       <p className="text-orange-600 text-sm mt-1">
-                        Bitte kaufen Sie ein Abonnement, um weiterhin Bilder zu generieren.
+                        Sie benötigen 4 Credits für eine Bildgenerierung (4 Bilder). Bitte kaufen Sie ein Abonnement.
                       </p>
                     </div>
                   )}
