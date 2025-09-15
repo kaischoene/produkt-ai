@@ -348,7 +348,7 @@ async def register_user(user_data: UserCreate):
         email=user_data.email,
         username=user_data.username,
         hashed_password=hashed_password,
-        credits=3,  # 3 free images
+        credits=12,  # 12 free images (3 generations à 4 Bilder)
         monthly_reset_date=datetime.now(timezone.utc) + timedelta(days=30)
     )
     
