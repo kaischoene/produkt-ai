@@ -40,17 +40,28 @@ body {
   background: #94a3b8;
 }
 
-/* Smooth transitions for interactive elements */
-button, a, input, textarea {
-  transition: all 0.2s ease;
+/* Smooth transitions for interactive elements - FIXED: No universal transitions */
+button:focus,
+input:focus,
+textarea:focus {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-/* Focus states */
 button:focus,
 input:focus,
 textarea:focus {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
+}
+
+/* Specific transitions for buttons only */
+button {
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+/* Input fields - stable without wacky animations */
+input, textarea, select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Card hover effects */
