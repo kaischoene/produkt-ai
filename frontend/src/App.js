@@ -773,46 +773,145 @@ const Dashboard = () => {
                   <span>Your Creations</span>
                 </CardTitle>
                 <CardDescription>
-                  View and manage your generated images
+                  View, download, and manage your generated images
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {generatedImages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No images yet</h3>
-                    <p className="text-gray-600 mb-4">Generate your first image to see it here</p>
-                    <Button onClick={() => setActiveTab('generate')}>
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Start Creating
-                    </Button>
+                  <div className="text-center py-16">
+                    <div className="space-y-4">
+                      <div className="w-24 h-24 bg-gray-100 rounded-2xl mx-auto flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No images yet</h3>
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                          Generate your first professional product image to see it here. 
+                          Each image includes full customization options and high-quality output.
+                        </p>
+                        <Button 
+                          onClick={() => setActiveTab('generate')}
+                          className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                        >
+                          <Wand2 className="w-4 h-4 mr-2" />
+                          Start Creating
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {generatedImages.map((image) => (
-                      <Card key={image.id} className="overflow-hidden">
-                        <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                          <ImageIcon className="w-12 h-12 text-gray-400" />
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <span className="text-white text-sm">Image Preview</span>
+                  <div className="space-y-6">
+                    {/* Gallery Stats */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="secondary" className="text-sm">
+                          {generatedImages.length} images generated
+                        </Badge>
+                        <Badge variant="outline" className="text-sm">
+                          {user.monthly_credits_used} credits used this month
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="outline" size="sm">
+                          <Download className="w-4 h-4 mr-1" />
+                          Download All
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Export Gallery
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Image Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {generatedImages.map((image) => (
+                        <Card key={image.id} className="group overflow-hidden hover:shadow-lg transition-all duration-200">
+                          <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
+                            {/* Image Preview Placeholder */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-center space-y-3">
+                                <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center mx-auto">
+                                  <ImageIcon className="w-8 h-8 text-gray-600" />
+                                </div>
+                                <p className="text-sm text-gray-700 font-medium">Generated Image</p>
+                                <Badge variant="secondary" className="text-xs">
+                                  {image.width}×{image.height}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                              <div className="flex space-x-2">
+                                <Button size="sm" variant="secondary">
+                                  <Download className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="secondary">
+                                  Share
+                                </Button>
+                                <Button size="sm" variant="secondary">
+                                  Edit
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div className="absolute top-3 left-3">
+                              <Badge 
+                                variant={image.status === 'completed' ? 'default' : 'secondary'}
+                                className="text-xs capitalize"
+                              >
+                                {image.status}
+                              </Badge>
+                            </div>
                           </div>
-                        </div>
-                        <CardContent className="p-4">
-                          <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                            {image.prompt}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <Badge variant="secondary" className="text-xs">
-                              {image.width}×{image.height}
-                            </Badge>
-                            <Button size="sm" variant="outline">
-                              <Download className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          
+                          <CardContent className="p-4 space-y-3">
+                            {/* Prompt Preview */}
+                            <div>
+                              <p className="text-sm text-gray-800 line-clamp-2 font-medium">
+                                {image.prompt}
+                              </p>
+                              {image.negative_prompt && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Avoiding: {image.negative_prompt}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Image Details */}
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>{new Date(image.created_at).toLocaleDateString()}</span>
+                              <div className="flex items-center space-x-2">
+                                <span>{image.width}×{image.height}</span>
+                                <span>•</span>
+                                <span className="capitalize">{image.status}</span>
+                              </div>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex space-x-2 pt-2">
+                              <Button size="sm" variant="outline" className="flex-1 text-xs">
+                                <Download className="w-3 h-3 mr-1" />
+                                Download
+                              </Button>
+                              <Button size="sm" variant="outline" className="flex-1 text-xs">
+                                Regenerate
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Load More */}
+                    {generatedImages.length >= 9 && (
+                      <div className="text-center pt-4">
+                        <Button variant="outline">
+                          Load More Images
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
