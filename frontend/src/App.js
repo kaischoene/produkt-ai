@@ -715,19 +715,36 @@ const Dashboard = () => {
                     {/* Quick Scene Ideas */}
                     <div className="space-y-2">
                       <Label className="text-sm font-medium">Quick Scene Ideas</Label>
-                      <div className="grid grid-cols-1 gap-2">
-                        {sceneIdeas.slice(0, 3).map((idea, index) => (
+                      <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                        {sceneIdeas.map((idea, index) => (
                           <Button
                             key={index}
                             variant="ghost"
                             size="sm"
-                            className="text-left justify-start h-auto p-2 text-xs text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
+                            className="text-left justify-start h-auto p-3 text-xs text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 border border-gray-200 hover:border-indigo-200 rounded-lg"
                             onClick={() => setGenerationForm(prev => ({ ...prev, prompt: idea }))}
                           >
-                            {idea}
+                            <div className="flex items-start space-x-2">
+                              <Star className="w-3 h-3 mt-0.5 text-gray-400" />
+                              <span className="text-left leading-relaxed">{idea}</span>
+                            </div>
                           </Button>
                         ))}
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => {
+                          // Shuffle the existing ideas for variety
+                          const shuffled = [...sceneIdeas].sort(() => Math.random() - 0.5);
+                          setSceneIdeas(shuffled);
+                          toast.success('Refreshed scene ideas!');
+                        }}
+                      >
+                        <Star className="w-3 h-3 mr-1" />
+                        Refresh Ideas
+                      </Button>
                     </div>
 
                     {/* Advanced Options */}
