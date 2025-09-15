@@ -799,7 +799,7 @@ const Dashboard = () => {
                     ) : (
                       <ImageIcon className="w-5 h-5 mr-2" />
                     )}
-                    {isGenerating ? 'Ihre Szene wird generiert...' : `Bild generieren (${user.credits} Credits verbleibend)`}
+                    {isGenerating ? 'Ihre 4 Szenen werden generiert...' : `4 Bilder generieren (${user.credits} Credits verbleibend)`}
                   </Button>
 
                   {user.credits <= 0 && (
