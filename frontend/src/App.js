@@ -453,78 +453,270 @@ const Dashboard = () => {
 
           {/* Generate Tab */}
           <TabsContent value="generate" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Product Upload */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <ImageIcon className="w-5 h-5" />
+                    <span>Your Product</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Upload your product image to generate professional scenes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Product Image Upload */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">
+                      <div className="space-y-4">
+                        {generationForm.productImage ? (
+                          <div className="relative">
+                            <img 
+                              src={URL.createObjectURL(generationForm.productImage)} 
+                              alt="Product" 
+                              className="max-h-48 mx-auto rounded-lg shadow-md"
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="absolute top-2 right-2"
+                              onClick={() => setGenerationForm(prev => ({ ...prev, productImage: null }))}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-12 h-12 text-gray-400 mx-auto" />
+                            <div>
+                              <p className="text-lg font-medium text-gray-900">Upload Product Image</p>
+                              <p className="text-sm text-gray-600">Drag and drop or click to browse</p>
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id="product-upload"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  setGenerationForm(prev => ({ ...prev, productImage: file }));
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="outline"
+                              onClick={() => document.getElementById('product-upload').click()}
+                            >
+                              Choose File
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Lighting Control */}
+                    <div className="space-y-2">
+                      <Label>Lighting</Label>
+                      <select
+                        className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-sm"
+                        value={generationForm.lighting}
+                        onChange={(e) => setGenerationForm(prev => ({ ...prev, lighting: e.target.value }))}
+                      >
+                        <option value="natural">Natural Light</option>
+                        <option value="studio">Studio Lighting</option>
+                        <option value="dramatic">Dramatic Shadows</option>
+                        <option value="soft">Soft Ambient</option>
+                        <option value="golden">Golden Hour</option>
+                        <option value="neon">Neon/Modern</option>
+                      </select>
+                    </div>
+
+                    {/* Aspect Ratio */}
+                    <div className="space-y-2">
+                      <Label>Aspect Ratio</Label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {['1:1', '4:3', '16:9', '3:4'].map((ratio) => (
+                          <Button
+                            key={ratio}
+                            variant={generationForm.aspectRatio === ratio ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setGenerationForm(prev => ({ ...prev, aspectRatio: ratio }));
+                              // Update width/height based on ratio
+                              const [w, h] = ratio.split(':').map(Number);
+                              const baseSize = 1024;
+                              if (w > h) {
+                                setGenerationForm(prev => ({ ...prev, width: baseSize, height: Math.round(baseSize * h / w) }));
+                              } else {
+                                setGenerationForm(prev => ({ ...prev, width: Math.round(baseSize * w / h), height: baseSize }));
+                              }
+                            }}
+                          >
+                            {ratio}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Camera Perspective */}
+                    <div className="space-y-2">
+                      <Label>Camera Perspective</Label>
+                      <select
+                        className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-sm"
+                        value={generationForm.cameraAngle}
+                        onChange={(e) => setGenerationForm(prev => ({ ...prev, cameraAngle: e.target.value }))}
+                      >
+                        <option value="front">Front View</option>
+                        <option value="angle">3/4 Angle</option>
+                        <option value="side">Side View</option>
+                        <option value="top">Top Down</option>
+                        <option value="low">Low Angle</option>
+                        <option value="high">High Angle</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Right Column - Scene Creation */}
+              <Card className="h-fit">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <Palette className="w-5 h-5" />
+                    <span>Create Your Own Scene</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Describe your ideal scene or get AI-powered suggestions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* Manual Scene Description */}
+                    <div className="space-y-2">
+                      <Label htmlFor="prompt">Scene Description</Label>
+                      <Textarea
+                        id="prompt"
+                        placeholder="e.g., A sunny beach with palm trees and turquoise water..."
+                        value={generationForm.prompt}
+                        onChange={(e) => setGenerationForm(prev => ({ ...prev, prompt: e.target.value }))}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+
+                    {/* Scene Ideas Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-medium">Or Get Scene Ideas</Label>
+                      </div>
+                      
+                      {/* From Description */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">From a Description</Label>
+                        <p className="text-xs text-gray-600">Describe a scene idea to get a detailed prompt</p>
+                        <div className="flex space-x-2">
+                          <Input
+                            placeholder="e.g., a serene zen garden"
+                            className="flex-1"
+                          />
+                          <Button variant="outline" size="sm">
+                            Get Ideas
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="text-center text-xs text-gray-500 font-medium">OR</div>
+
+                      {/* From Style Image */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">From a Style Image</Label>
+                        <p className="text-xs text-gray-600">Upload an image to inspire suggestions</p>
+                        <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
+                          <div className="space-y-2">
+                            <div className="w-8 h-8 bg-gray-100 rounded-md mx-auto flex items-center justify-center">
+                              <ImageIcon className="w-4 h-4 text-gray-400" />
+                            </div>
+                            <p className="text-xs text-gray-600">Upload Style</p>
+                            <Button variant="outline" size="sm">
+                              Get Ideas from Image
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Scene Ideas */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Quick Scene Ideas</Label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {sceneIdeas.slice(0, 3).map((idea, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="text-left justify-start h-auto p-2 text-xs text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
+                            onClick={() => setGenerationForm(prev => ({ ...prev, prompt: idea }))}
+                          >
+                            {idea}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Advanced Options */}
+                    <div className="space-y-4 pt-4 border-t border-gray-200">
+                      <Label className="text-sm font-medium">Advanced Options</Label>
+                      
+                      {/* Style Selection */}
+                      <div className="space-y-2">
+                        <Label className="text-xs">Style</Label>
+                        <select
+                          className="w-full h-9 px-2 rounded-md border border-gray-300 bg-white text-xs"
+                          value={generationForm.style}
+                          onChange={(e) => setGenerationForm(prev => ({ ...prev, style: e.target.value }))}
+                        >
+                          <option value="realistic">Realistic</option>
+                          <option value="artistic">Artistic</option>
+                          <option value="minimal">Minimal</option>
+                          <option value="vintage">Vintage</option>
+                          <option value="modern">Modern</option>
+                          <option value="cinematic">Cinematic</option>
+                        </select>
+                      </div>
+
+                      {/* What to Avoid */}
+                      <div className="space-y-2">
+                        <Label htmlFor="negative_prompt" className="text-xs">What to Avoid (Optional)</Label>
+                        <Input
+                          id="negative_prompt"
+                          placeholder="blurry, low quality, dark..."
+                          value={generationForm.negative_prompt}
+                          onChange={(e) => setGenerationForm(prev => ({ ...prev, negative_prompt: e.target.value }))}
+                          className="h-9 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Generate Button */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Palette className="w-5 h-5" />
-                  <span>Create Your Image</span>
-                </CardTitle>
-                <CardDescription>
-                  Describe what you want to create and our AI will generate it for you
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleGenerate} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="prompt">Image Description</Label>
-                    <Textarea
-                      id="prompt"
-                      placeholder="A majestic mountain landscape at sunset with golden light..."
-                      value={generationForm.prompt}
-                      onChange={(e) => setGenerationForm(prev => ({ ...prev, prompt: e.target.value }))}
-                      required
-                      className="min-h-[100px]"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="negative_prompt">What to Avoid (Optional)</Label>
-                    <Input
-                      id="negative_prompt"
-                      placeholder="blurry, low quality, dark..."
-                      value={generationForm.negative_prompt}
-                      onChange={(e) => setGenerationForm(prev => ({ ...prev, negative_prompt: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="width">Width</Label>
-                      <Input
-                        id="width"
-                        type="number"
-                        min="512"
-                        max="2048"
-                        step="64"
-                        value={generationForm.width}
-                        onChange={(e) => setGenerationForm(prev => ({ ...prev, width: parseInt(e.target.value) }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="height">Height</Label>
-                      <Input
-                        id="height"
-                        type="number"
-                        min="512"
-                        max="2048"
-                        step="64"
-                        value={generationForm.height}
-                        onChange={(e) => setGenerationForm(prev => ({ ...prev, height: parseInt(e.target.value) }))}
-                      />
-                    </div>
-                  </div>
-
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
                   <Button 
-                    type="submit" 
-                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
+                    onClick={handleGenerate}
+                    className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
                     disabled={isGenerating || user.credits <= 0}
                   >
                     {isGenerating ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
                     ) : (
-                      <ImageIcon className="w-4 h-4 mr-2" />
+                      <ImageIcon className="w-5 h-5 mr-2" />
                     )}
-                    {isGenerating ? 'Generating...' : `Generate Image (${user.credits} credits left)`}
+                    {isGenerating ? 'Generating Your Scene...' : `Generate Image (${user.credits} credits left)`}
                   </Button>
 
                   {user.credits <= 0 && (
@@ -538,7 +730,14 @@ const Dashboard = () => {
                       </p>
                     </div>
                   )}
-                </form>
+
+                  {isGenerating && (
+                    <div className="space-y-2">
+                      <Progress value={66} className="w-full" />
+                      <p className="text-sm text-gray-600">Generating your professional scene...</p>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
