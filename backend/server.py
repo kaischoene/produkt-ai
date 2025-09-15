@@ -312,11 +312,11 @@ class ImageEngine:
 # Initialize Image Engine
 image_engine = ImageEngine()
 
-# Background task for REAL Google AI image generation
+# Background task for REAL Nano-Banana AI image generation
 async def generate_real_images(job_id: str, request: ImageGenerationRequest):
-    """Background task to generate REAL AI images using Google's imagen model"""
+    """Background task to generate REAL AI images using Nano-Banana via Emergent LLM"""
     try:
-        print(f"Starting REAL AI image generation for job {job_id}")
+        print(f"Starting REAL Nano-Banana AI image generation for job {job_id}")
         
         # Get the job from database
         job = await db.image_jobs.find_one({"id": job_id})
@@ -324,240 +324,87 @@ async def generate_real_images(job_id: str, request: ImageGenerationRequest):
             print(f"Job {job_id} not found")
             return
         
-        # Try Google AI first (if available)
-        google_api_key = os.environ.get('GOOGLE_AI_API_KEY')
-        
-        if google_api_key:
-            print("Attempting Google AI image generation...")
-            success = await generate_with_google_ai(job_id, request, google_api_key)
-            if success:
-                return
-        
-        # Fallback: Try a different approach with requests to imagen API
-        print("Attempting direct imagen API call...")
-        success = await generate_with_imagen_api(job_id, request, google_api_key)
-        if success:
+        # Get API key
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            print("ERROR: EMERGENT_LLM_KEY not found")
+            await mark_job_failed(job_id, "API key not configured")
             return
-            
-        # Final fallback: Create high-quality placeholder images with text
-        print("Creating high-quality demo images...")
-        await generate_demo_images(job_id, request)
-        
-    except Exception as e:
-        print(f"Background generation failed for job {job_id}: {str(e)}")
-        await mark_job_failed(job_id, str(e))
-
-async def generate_with_google_ai(job_id: str, request: ImageGenerationRequest, api_key: str) -> bool:
-    """Try to generate images with Google AI"""
-    try:
-        import google.generativeai as genai
-        import requests
-        
-        # Try direct API call to imagen
-        url = "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:generateImage"
-        
-        headers = {
-            "Authorization": f"API_KEY {api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        prompt = f"Create a professional, high-quality product image: {request.prompt}"
-        if request.negative_prompt:
-            prompt += f". Avoid: {request.negative_prompt}"
-        
-        data = {
-            "prompt": prompt,
-            "number_of_images": 4,
-            "aspect_ratio": "1:1",
-            "safety_filter_level": "block_only_high",
-            "person_generation": "dont_allow"
-        }
-        
-        response = requests.post(url, headers=headers, json=data, timeout=60)
-        
-        if response.status_code == 200:
-            result = response.json()
-            
-            generated_images = []
-            if 'generatedImages' in result:
-                for i, img_data in enumerate(result['generatedImages'][:4]):
-                    if 'generatedImage' in img_data:
-                        image_bytes = base64.b64decode(img_data['generatedImage'])
-                        
-                        filename = f"img_{job_id}_{i+1}.png"
-                        image_path = f"/tmp/{filename}"
-                        
-                        with open(image_path, "wb") as f:
-                            f.write(image_bytes)
-                        
-                        image_url = f"/api/images/{filename}"
-                        generated_images.append({
-                            "url": image_url,
-                            "filename": filename,
-                            "index": i+1
-                        })
-                        
-                        print(f"Generated Google AI image {i+1}/4")
-            
-            if generated_images:
-                await update_job_completed(job_id, generated_images)
-                print(f"✅ Google AI generation successful for job {job_id}")
-                return True
-        else:
-            print(f"Google AI API error: {response.status_code} - {response.text}")
-            
-    except Exception as e:
-        print(f"Google AI generation error: {str(e)}")
-    
-    return False
-
-async def generate_with_imagen_api(job_id: str, request: ImageGenerationRequest, api_key: str) -> bool:
-    """Try to generate with direct imagen API calls"""
-    try:
-        # This would be the direct imagen API call
-        # For now, return False to use demo images
-        return False
-    except Exception as e:
-        print(f"Imagen API error: {str(e)}")
-        return False
-
-async def generate_demo_images(job_id: str, request: ImageGenerationRequest):
-    """Generate high-quality demo images that look more realistic"""
-    try:
-        from PIL import Image, ImageDraw, ImageFont, ImageFilter
-        import random
         
         generated_images = []
         
+        # Generate 4 images using Nano-Banana
         for i in range(4):
-            # Create a larger, more professional image
-            img = Image.new('RGB', (request.width, request.height), color=(245, 245, 250))
-            draw = ImageDraw.Draw(img)
-            
-            # Create a gradient background
-            for y in range(request.height):
-                r = int(245 + (y / request.height) * 10)
-                g = int(245 + (y / request.height) * 5)
-                b = int(250 - (y / request.height) * 5)
-                draw.line([(0, y), (request.width, y)], fill=(r, g, b))
-            
-            # Add product based on prompt keywords
-            if any(word in request.prompt.lower() for word in ['smartphone', 'phone', 'handy']):
-                # Draw a realistic smartphone
-                phone_w, phone_h = request.width//4, int(request.width//4 * 1.8)
-                x = (request.width - phone_w) // 2
-                y = (request.height - phone_h) // 2
-                
-                # Phone shadow
-                shadow_offset = 10
-                draw.rounded_rectangle([x+shadow_offset, y+shadow_offset, x+phone_w+shadow_offset, y+phone_h+shadow_offset], 
-                                     radius=30, fill=(200, 200, 200, 100))
-                
-                # Phone body
-                draw.rounded_rectangle([x, y, x+phone_w, y+phone_h], radius=30, fill=(40, 40, 45))
-                
-                # Screen
-                screen_margin = 15
-                draw.rounded_rectangle([x+screen_margin, y+screen_margin*2, 
-                                      x+phone_w-screen_margin, y+phone_h-screen_margin], 
-                                     radius=25, fill=(20, 25, 35))
-                
-                # Screen content
-                draw.rounded_rectangle([x+screen_margin+5, y+screen_margin*2+phone_h//8, 
-                                      x+phone_w-screen_margin-5, y+phone_h-screen_margin-phone_h//8], 
-                                     radius=20, fill=(100, 150, 255))
-                
-                # Home indicator
-                indicator_w = 40
-                indicator_h = 4
-                ind_x = x + (phone_w - indicator_w) // 2
-                ind_y = y + phone_h - 20
-                draw.rounded_rectangle([ind_x, ind_y, ind_x+indicator_w, ind_y+indicator_h], 
-                                     radius=2, fill=(180, 180, 180))
-                
-            elif any(word in request.prompt.lower() for word in ['tablet', 'ipad']):
-                # Draw a tablet
-                tablet_w, tablet_h = int(request.width//2.5), int(request.width//3.5)
-                x = (request.width - tablet_w) // 2
-                y = (request.height - tablet_h) // 2
-                
-                # Tablet shadow
-                draw.rounded_rectangle([x+8, y+8, x+tablet_w+8, y+tablet_h+8], 
-                                     radius=20, fill=(180, 180, 180))
-                
-                # Tablet body
-                draw.rounded_rectangle([x, y, x+tablet_w, y+tablet_h], radius=20, fill=(50, 50, 55))
-                
-                # Screen
-                screen_margin = 25
-                draw.rounded_rectangle([x+screen_margin, y+screen_margin, 
-                                      x+tablet_w-screen_margin, y+tablet_h-screen_margin], 
-                                     radius=15, fill=(25, 30, 40))
-                
-            else:
-                # Generic elegant product
-                product_size = min(request.width, request.height) // 3
-                x = (request.width - product_size) // 2
-                y = (request.height - product_size) // 2
-                
-                # Product shadow
-                draw.ellipse([x+10, y+10, x+product_size+10, y+product_size+10], 
-                           fill=(180, 180, 180))
-                
-                # Product
-                colors = [(120, 80, 60), (80, 120, 90), (90, 90, 120), (120, 90, 80)]
-                color = colors[i % len(colors)]
-                draw.ellipse([x, y, x+product_size, y+product_size], fill=color)
-                
-                # Highlight
-                highlight_size = product_size // 3
-                hx = x + product_size // 4
-                hy = y + product_size // 4
-                lighter_color = tuple(min(255, c + 40) for c in color)
-                draw.ellipse([hx, hy, hx+highlight_size, hy+highlight_size], fill=lighter_color)
-            
-            # Add wooden table/surface effect at bottom
-            table_height = request.height // 6
-            table_y = request.height - table_height
-            
-            # Wood grain effect
-            for line_y in range(table_y, request.height, 3):
-                wood_color = (139 + random.randint(-10, 10), 
-                            90 + random.randint(-5, 5), 
-                            43 + random.randint(-3, 3))
-                draw.line([(0, line_y), (request.width, line_y)], fill=wood_color, width=2)
-            
-            # Add subtle text
             try:
-                font = ImageFont.load_default()
-                watermark = f"ProduktAI • Variation {i+1}"
-                bbox = draw.textbbox((0, 0), watermark, font=font)
-                text_width = bbox[2] - bbox[0]
-                text_x = request.width - text_width - 10
-                text_y = 10
-                draw.text((text_x, text_y), watermark, fill=(120, 120, 120), font=font)
-            except:
-                pass
-            
-            # Save the enhanced image
-            filename = f"img_{job_id}_{i+1}.png"
-            image_path = f"/tmp/{filename}"
-            img.save(image_path, "PNG", quality=95)
-            
-            image_url = f"/api/images/{filename}"
-            generated_images.append({
-                "url": image_url,
-                "filename": filename,
-                "index": i+1
-            })
-            
-            print(f"Generated enhanced demo image {i+1}/4")
+                print(f"Generating image {i+1}/4 with Nano-Banana...")
+                
+                # Create new chat instance for each image
+                chat = LlmChat(
+                    api_key=api_key,
+                    session_id=f"nano_banana_{job_id}_{i}",
+                    system_message="You are a professional AI image generator. Create high-quality, photorealistic product images."
+                )
+                
+                # Configure for Nano-Banana image generation
+                chat.with_model("gemini", "gemini-2.5-flash-image-preview").with_params(modalities=["image", "text"])
+                
+                # Create enhanced prompt for Nano-Banana
+                enhanced_prompt = f"Create a professional, high-quality product photograph: {request.prompt}"
+                if request.negative_prompt:
+                    enhanced_prompt += f". Avoid: {request.negative_prompt}"
+                enhanced_prompt += f". Style: photorealistic, commercial photography, high resolution, professional lighting. Variation #{i+1}"
+                
+                # Generate image with Nano-Banana
+                msg = UserMessage(text=enhanced_prompt)
+                text_response, images = await chat.send_message_multimodal_response(msg)
+                
+                print(f"Nano-Banana response: {text_response[:100] if text_response else 'None'}...")
+                
+                if images and len(images) > 0:
+                    print(f"✅ Nano-Banana generated {len(images)} images for variation {i+1}")
+                    
+                    # Process the first image from Nano-Banana
+                    image_data = images[0]
+                    
+                    # Decode base64 data to bytes
+                    image_bytes = base64.b64decode(image_data['data'])
+                    
+                    # Save the Nano-Banana generated image
+                    filename = f"img_{job_id}_{i+1}.png"
+                    image_path = f"/tmp/{filename}"
+                    
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+                    
+                    # Add to results
+                    image_url = f"/api/images/{filename}"
+                    generated_images.append({
+                        "url": image_url,
+                        "filename": filename,
+                        "index": i+1,
+                        "source": "nano-banana-ai"
+                    })
+                    
+                    print(f"✅ Saved Nano-Banana image {i+1}: {filename} ({len(image_bytes)} bytes)")
+                    
+                else:
+                    print(f"⚠️ No images returned from Nano-Banana for variation {i+1}")
+                    
+            except Exception as img_error:
+                print(f"❌ Error generating Nano-Banana image {i+1}: {str(img_error)}")
+                # Continue with next image instead of failing completely
+                continue
         
-        await update_job_completed(job_id, generated_images)
-        print(f"✅ Enhanced demo generation completed for job {job_id}")
+        if generated_images:
+            # Update job as completed with Nano-Banana images
+            await update_job_completed(job_id, generated_images)
+            print(f"🎉 Nano-Banana generation completed for job {job_id} with {len(generated_images)} real AI images!")
+        else:
+            print(f"❌ No Nano-Banana images could be generated for job {job_id}")
+            await mark_job_failed(job_id, "Nano-Banana image generation failed")
         
     except Exception as e:
-        print(f"Demo generation error: {str(e)}")
+        print(f"❌ Nano-Banana generation failed for job {job_id}: {str(e)}")
         await mark_job_failed(job_id, str(e))
 
 async def update_job_completed(job_id: str, generated_images: list):
