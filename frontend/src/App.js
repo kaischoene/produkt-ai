@@ -986,7 +986,19 @@ const Dashboard = () => {
                             
                             {/* Action Buttons */}
                             <div className="flex space-x-2 pt-2">
-                              <Button size="sm" variant="outline" className="flex-1 text-xs">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1 text-xs"
+                                onClick={() => {
+                                  if (image.image_url) {
+                                    const link = document.createElement('a');
+                                    link.href = `${BACKEND_URL}${image.image_url}`;
+                                    link.download = `produktai_${image.id}.png`;
+                                    link.click();
+                                  }
+                                }}
+                              >
                                 <Download className="w-3 h-3 mr-1" />
                                 Herunterladen
                               </Button>
