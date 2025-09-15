@@ -177,7 +177,11 @@ class ImageEngine:
             
             # Use Google AI API directly for better control
             if self.google_api_key:
-                await self._generate_with_google_ai(job, params)
+                try:
+                    await self._generate_with_google_ai(job, params)
+                except Exception as e:
+                    print(f"Google AI failed, using Emergent: {str(e)}")
+                    await self._generate_with_emergent(job, params)
             else:
                 await self._generate_with_emergent(job, params)
             
