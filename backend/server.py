@@ -45,7 +45,7 @@ class User(BaseModel):
     email: EmailStr
     username: str
     hashed_password: str
-    credits: int = 3  # 3 free images
+    credits: int = 12  # 12 free images (3 generations à 4 Bilder)
     subscription_plan: Optional[str] = None  # basic/premium/pro
     subscription_status: str = "free"  # free/active/cancelled
     subscription_period_start: Optional[datetime] = None
