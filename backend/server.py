@@ -560,15 +560,19 @@ async def get_user_images(current_user: User = Depends(get_current_user)):
 # Serve generated images
 @api_router.get("/images/{image_filename}")
 async def serve_image(image_filename: str):
-    """Serve generated images from temp directory"""
+    """Serve generated images from temp directory - no auth required for images"""
     try:
+        # Security: Only allow serving images that match our naming pattern
+        if not image_filename.startswith("img_") or not image_filename.endswith(".png"):
+            raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+        
         image_path = f"/tmp/{image_filename}"
         if os.path.exists(image_path):
             return FileResponse(image_path, media_type="image/png")
         else:
-            # Return a placeholder or 404
             raise HTTPException(status_code=404, detail="Bild nicht gefunden")
     except Exception as e:
+        print(f"Error serving image {image_filename}: {str(e)}")
         raise HTTPException(status_code=500, detail="Fehler beim Laden des Bildes")
 
 # Subscription Management
