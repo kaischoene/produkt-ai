@@ -410,7 +410,7 @@ const Dashboard = () => {
         const job = response.data;
         
         if (job.status === 'completed') {
-          toast.success('Bild erfolgreich generiert!');
+          toast.success('4 Bilder erfolgreich generiert!');
           fetchUserImages();
           setIsGenerating(false);
           setActiveTab('gallery');
