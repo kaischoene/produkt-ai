@@ -152,74 +152,34 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 # Image Engine Abstraction Layer (White-Label)
 class ImageEngine:
     def __init__(self):
-        self.api_key = os.environ.get('EMERGENT_LLM_KEY')
-        if not self.api_key:
-            raise ValueError("IMAGE_ENGINE_API_KEY not configured")
+        self.emergent_api_key = os.environ.get('EMERGENT_LLM_KEY')
+        self.google_api_key = os.environ.get('GOOGLE_AI_API_KEY')
+        if not self.emergent_api_key and not self.google_api_key:
+            raise ValueError("Kein API-Schlüssel für Bildgenerierung konfiguriert")
     
     async def generate_image(self, params: ImageGenerationRequest, user_id: str) -> str:
-        """Generate image using abstracted engine - no vendor specifics exposed"""
+        """Generate 4 images using abstracted engine - no vendor specifics exposed"""
         try:
             # Create job record
             job = ImageGenerationJob(
                 user_id=user_id,
                 prompt=params.prompt,
                 negative_prompt=params.negative_prompt,
-                width=params.width,
-                height=params.height,
+                width=max(params.width, 1024),  # Ensure high resolution
+                height=max(params.height, 1024),  # Ensure high resolution
                 status="processing"
             )
             
             # Store job in database
             await db.image_jobs.insert_one(job.model_dump())
             
-            # Initialize LLM Chat with Gemini model for image generation
-            chat = LlmChat(
-                api_key=self.api_key, 
-                session_id=f"img_gen_{job.id}",
-                system_message="You are an advanced image generation engine. Create high-quality images based on user prompts."
-            )
-            chat.with_model("gemini", "gemini-2.5-flash-image-preview").with_params(modalities=["image", "text"])
-            
-            # Create optimized prompt for image generation
-            image_prompt = f"Create a high-quality image: {params.prompt}"
-            if params.negative_prompt:
-                image_prompt += f". Avoid: {params.negative_prompt}"
-            
-            msg = UserMessage(text=image_prompt)
-            
-            # Generate image
-            text_response, images = await chat.send_message_multimodal_response(msg)
-            
-            if images and len(images) > 0:
-                # Save the first generated image
-                image_data = images[0]
-                image_bytes = base64.b64decode(image_data['data'])
-                
-                # Create neutral filename (no vendor strings)
-                filename = f"img_{job.id}.png"
-                image_path = f"/tmp/{filename}"
-                
-                with open(image_path, "wb") as f:
-                    f.write(image_bytes)
-                
-                # For now, we'll use a placeholder URL - in production, upload to S3/CDN
-                image_url = f"/api/images/{job.id}"
-                
-                # Update job as completed
-                await db.image_jobs.update_one(
-                    {"id": job.id},
-                    {
-                        "$set": {
-                            "status": "completed",
-                            "image_url": image_url,
-                            "completed_at": datetime.now(timezone.utc)
-                        }
-                    }
-                )
-                
-                return job.id
+            # Use Google AI API directly for better control
+            if self.google_api_key:
+                await self._generate_with_google_ai(job, params)
             else:
-                raise Exception("ENGINE_ERROR: No image generated")
+                await self._generate_with_emergent(job, params)
+            
+            return job.id
                 
         except Exception as e:
             # Generic error handling - no vendor-specific errors exposed
@@ -234,6 +194,136 @@ class ImageEngine:
                 }
             )
             raise HTTPException(status_code=500, detail="Die Bildgenerierungs-Engine ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.")
+    
+    async def _generate_with_google_ai(self, job: ImageGenerationJob, params: ImageGenerationRequest):
+        """Generate images using Google AI API directly"""
+        import google.generativeai as genai
+        
+        # Configure Google AI
+        genai.configure(api_key=self.google_api_key)
+        
+        # Use Imagen model for high-quality image generation
+        model = genai.GenerativeModel('gemini-1.5-pro')
+        
+        # Create optimized prompt for image generation
+        image_prompt = f"Generate a high-quality, professional image: {params.prompt}"
+        if params.negative_prompt:
+            image_prompt += f". Avoid: {params.negative_prompt}"
+        image_prompt += f". Resolution: {params.width}x{params.height}. Style: photorealistic, high detail, professional photography quality."
+        
+        try:
+            # Generate multiple images for variety
+            generated_images = []
+            
+            for i in range(4):  # Generate 4 images
+                response = model.generate_content([image_prompt])
+                
+                if response and hasattr(response, 'parts'):
+                    for part in response.parts:
+                        if hasattr(part, 'inline_data'):
+                            image_data = part.inline_data.data
+                            
+                            # Create neutral filename
+                            filename = f"img_{job.id}_{i+1}.png"
+                            image_path = f"/tmp/{filename}"
+                            
+                            # Save image
+                            with open(image_path, "wb") as f:
+                                f.write(base64.b64decode(image_data))
+                            
+                            # For now, use placeholder URL
+                            image_url = f"/api/images/{job.id}_{i+1}"
+                            generated_images.append({
+                                "url": image_url,
+                                "filename": filename,
+                                "index": i+1
+                            })
+            
+            if generated_images:
+                # Update job as completed with multiple images
+                await db.image_jobs.update_one(
+                    {"id": job.id},
+                    {
+                        "$set": {
+                            "status": "completed",
+                            "image_url": generated_images[0]["url"],  # Primary image
+                            "images": generated_images,  # All generated images
+                            "images_count": len(generated_images),
+                            "completed_at": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+            else:
+                raise Exception("Keine Bilder generiert")
+                
+        except Exception as e:
+            # Fall back to Emergent API if Google AI fails
+            await self._generate_with_emergent(job, params)
+    
+    async def _generate_with_emergent(self, job: ImageGenerationJob, params: ImageGenerationRequest):
+        """Fallback generation using Emergent LLM"""
+        try:
+            # Initialize LLM Chat with Gemini model for image generation
+            chat = LlmChat(
+                api_key=self.emergent_api_key, 
+                session_id=f"img_gen_{job.id}",
+                system_message="Du bist eine fortschrittliche Bildgenerierungs-Engine. Erstelle hochwertige Bilder basierend auf Benutzer-Prompts."
+            )
+            chat.with_model("gemini", "gemini-2.5-flash-image-preview").with_params(modalities=["image", "text"])
+            
+            # Create optimized prompt for image generation
+            image_prompt = f"Erstelle ein hochwertiges Bild: {params.prompt}"
+            if params.negative_prompt:
+                image_prompt += f". Vermeide: {params.negative_prompt}"
+            
+            generated_images = []
+            
+            # Generate 4 images
+            for i in range(4):
+                msg = UserMessage(text=f"{image_prompt}. Variation #{i+1}")
+                
+                # Generate image
+                text_response, images = await chat.send_message_multimodal_response(msg)
+                
+                if images and len(images) > 0:
+                    # Save the generated image
+                    image_data = images[0]
+                    image_bytes = base64.b64decode(image_data['data'])
+                    
+                    # Create neutral filename
+                    filename = f"img_{job.id}_{i+1}.png"
+                    image_path = f"/tmp/{filename}"
+                    
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+                    
+                    # For now, use placeholder URL
+                    image_url = f"/api/images/{job.id}_{i+1}"
+                    generated_images.append({
+                        "url": image_url,
+                        "filename": filename,
+                        "index": i+1
+                    })
+            
+            if generated_images:
+                # Update job as completed
+                await db.image_jobs.update_one(
+                    {"id": job.id},
+                    {
+                        "$set": {
+                            "status": "completed",
+                            "image_url": generated_images[0]["url"],  # Primary image
+                            "images": generated_images,  # All generated images
+                            "images_count": len(generated_images),
+                            "completed_at": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+            else:
+                raise Exception("ENGINE_ERROR: Keine Bilder generiert")
+                
+        except Exception as e:
+            raise Exception(f"Bildgenerierung fehlgeschlagen: {str(e)}")
 
 # Initialize Image Engine
 image_engine = ImageEngine()
