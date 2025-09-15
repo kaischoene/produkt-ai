@@ -169,7 +169,7 @@ const AuthPage = () => {
           <p className="text-gray-600">KI-gestützte Produktbild-Generierung</p>
         </div>
 
-        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm auth-card">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">
               {isLogin ? 'Willkommen zurück' : 'Konto erstellen'}
@@ -178,7 +178,7 @@ const AuthPage = () => {
               {isLogin ? 'Melden Sie sich an, um weiter zu erstellen' : 'Starten Sie mit 12 kostenlosen Bildern'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="auth-form-container">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-Mail</Label>
@@ -190,7 +190,7 @@ const AuthPage = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="h-11"
+                  className="h-11 auth-input"
                 />
               </div>
 
@@ -205,7 +205,7 @@ const AuthPage = () => {
                     value={formData.username}
                     onChange={handleInputChange}
                     required
-                    className="h-11"
+                    className="h-11 auth-input"
                   />
                 </div>
               )}
@@ -220,13 +220,13 @@ const AuthPage = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  className="h-11"
+                  className="h-11 auth-input"
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full h-11 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
+                className="w-full h-11 auth-button bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
                 disabled={isLoading}
               >
                 {isLoading ? (
