@@ -27,7 +27,7 @@ class PixelHubAPITester:
         if details and success:
             print(f"   Details: {details}")
 
-    def make_request(self, method, endpoint, data=None, headers=None):
+    def make_request(self, method, endpoint, data=None, headers=None, timeout=10):
         """Make HTTP request with error handling"""
         url = f"{self.base_url}/{endpoint}"
         default_headers = {'Content-Type': 'application/json'}
@@ -40,13 +40,13 @@ class PixelHubAPITester:
 
         try:
             if method == 'GET':
-                response = requests.get(url, headers=default_headers, timeout=30)
+                response = requests.get(url, headers=default_headers, timeout=timeout)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=default_headers, timeout=30)
+                response = requests.post(url, json=data, headers=default_headers, timeout=timeout)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=default_headers, timeout=30)
+                response = requests.put(url, json=data, headers=default_headers, timeout=timeout)
             elif method == 'DELETE':
-                response = requests.delete(url, headers=default_headers, timeout=30)
+                response = requests.delete(url, headers=default_headers, timeout=timeout)
             
             return response
         except requests.exceptions.RequestException as e:
