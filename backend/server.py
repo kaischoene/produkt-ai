@@ -519,7 +519,7 @@ async def stripe_webhook(request: Request):
 # Health check
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "image-generation-platform"}
+    return {"status": "healthy", "service": "produktbild-generierungsplattform"}
 
 # Include the router in the main app
 app.include_router(api_router)
