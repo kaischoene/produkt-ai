@@ -414,10 +414,31 @@ const Dashboard = () => {
     }
   };
 
-  const getCreditsColor = () => {
-    if (user.credits <= 0) return 'text-red-600';
-    if (user.credits <= 5) return 'text-orange-600';
-    return 'text-green-600';
+  const generateSceneIdeas = async (description) => {
+    if (!description.trim()) {
+      toast.error('Please enter a scene description');
+      return;
+    }
+
+    setIsLoadingIdeas(true);
+    try {
+      // Generate enhanced scene ideas based on description
+      const enhancedIdeas = [
+        `Professional ${description} with studio lighting and clean composition`,
+        `${description} in a modern minimalist setting with soft shadows`,
+        `Artistic interpretation of ${description} with dramatic lighting effects`,
+        `${description} with natural ambient lighting and organic textures`,
+        `Cinematic ${description} with dynamic angles and rich colors`
+      ];
+      
+      setSceneIdeas(enhancedIdeas);
+      document.getElementById('scene-description-input').value = '';
+      toast.success('Generated 5 new scene ideas for you!');
+    } catch (error) {
+      toast.error('Failed to generate scene ideas');
+    } finally {
+      setIsLoadingIdeas(false);
+    }
   };
 
   return (
