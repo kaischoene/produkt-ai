@@ -396,11 +396,11 @@ async def generate_image(
     request: ImageGenerationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    # Check if user has credits
-    if current_user.credits <= 0:
+    # Check if user has credits (needs 4 credits for 4 images)
+    if current_user.credits < 4:
         raise HTTPException(
             status_code=403, 
-            detail="Nicht genügend Credits. Bitte kaufen Sie ein Abonnement, um weiterhin Bilder zu generieren."
+            detail="Sie benötigen 4 Credits für eine Bildgenerierung. Bitte kaufen Sie ein Abonnement, um weiterhin Bilder zu generieren."
         )
     
     # Generate image with 4 images in highest resolution
