@@ -258,7 +258,7 @@ class PixelHubAPITester:
         
         # Test with basic plan - this might fail due to Stripe configuration
         try:
-            response = self.make_request('POST', 'subscription/checkout', {"plan_id": "basic"})
+            response = self.make_request('POST', 'subscription/checkout?plan_id=basic', None)
             
             if response and response.status_code == 200:
                 checkout_data = response.json()
