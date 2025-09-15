@@ -290,23 +290,32 @@ class PixelHubAPITester:
         print("\n🔍 Testing Error Handling...")
         
         # Test invalid login
-        response = self.make_request('POST', 'auth/login', {
-            "email": "invalid@email.com",
-            "password": "wrongpassword"
-        })
-        
-        success = response and response.status_code == 401
-        self.log_test("Invalid Login Error Handling", success, f"Status: {response.status_code if response else 'No response'}")
+        try:
+            response = self.make_request('POST', 'auth/login', {
+                "email": "invalid@email.com",
+                "password": "wrongpassword"
+            }, timeout=5)
+            
+            success = response and response.status_code == 401
+            self.log_test("Invalid Login Error Handling", success, f"Status: {response.status_code if response else 'No response'}")
+        except Exception as e:
+            self.log_test("Invalid Login Error Handling", False, f"Exception: {str(e)}")
+            success = False
         
         # Test unauthorized access
-        old_token = self.token
-        self.token = "invalid_token"
-        response = self.make_request('GET', 'auth/me')
-        unauthorized_success = response and response.status_code == 401
-        self.log_test("Unauthorized Access Error Handling", unauthorized_success, f"Status: {response.status_code if response else 'No response'}")
-        
-        # Restore valid token
-        self.token = old_token
+        try:
+            old_token = self.token
+            self.token = "invalid_token"
+            response = self.make_request('GET', 'auth/me', timeout=5)
+            unauthorized_success = response and response.status_code == 401
+            self.log_test("Unauthorized Access Error Handling", unauthorized_success, f"Status: {response.status_code if response else 'No response'}")
+            
+            # Restore valid token
+            self.token = old_token
+        except Exception as e:
+            self.log_test("Unauthorized Access Error Handling", False, f"Exception: {str(e)}")
+            unauthorized_success = False
+            self.token = old_token
         
         return success and unauthorized_success
 
