@@ -233,7 +233,7 @@ class ImageEngine:
                     }
                 }
             )
-            raise HTTPException(status_code=500, detail="Image generation engine is currently unavailable. Please try again later.")
+            raise HTTPException(status_code=500, detail="Die Bildgenerierungs-Engine ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.")
 
 # Initialize Image Engine
 image_engine = ImageEngine()
