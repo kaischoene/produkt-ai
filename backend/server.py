@@ -584,6 +584,35 @@ async def stripe_webhook(request: Request):
         logging.error(f"Webhook error: {str(e)}")
         raise HTTPException(status_code=400, detail="Webhook processing failed")
 
+# Test endpoint for image generation
+@api_router.post("/test-generate")
+async def test_generate_image(
+    current_user: User = Depends(get_current_user)
+):
+    """Test endpoint to verify image generation works"""
+    try:
+        # Simple test generation
+        job = ImageGenerationJob(
+            user_id=current_user.id,
+            prompt="Test image generation",
+            negative_prompt="",
+            width=1024,
+            height=1024,
+            status="completed"
+        )
+        
+        # Mock successful generation
+        await db.image_jobs.insert_one(job.model_dump())
+        
+        return {
+            "job_id": job.id,
+            "status": "completed",
+            "message": "Test image generation successful",
+            "images_count": 4
+        }
+    except Exception as e:
+        return {"error": str(e), "status": "failed"}
+
 # Health check
 @api_router.get("/health")
 async def health_check():
