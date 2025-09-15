@@ -269,11 +269,15 @@ const Dashboard = () => {
   });
   const [sceneIdeas, setSceneIdeas] = useState([
     "A luxurious marble background with soft golden lighting",
-    "Minimalist white studio setup with dramatic shadows",
+    "Minimalist white studio setup with dramatic shadows", 
     "Rustic wooden table with warm ambient lighting",
     "Modern gradient background with neon accents",
-    "Natural outdoor setting with sunlight filtering through trees"
+    "Natural outdoor setting with sunlight filtering through trees",
+    "Industrial concrete backdrop with moody lighting",
+    "Elegant fabric draping with soft diffused light",
+    "Vintage leather surface with warm tungsten glow"
   ]);
+  const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState({});
