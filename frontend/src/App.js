@@ -441,6 +441,12 @@ const Dashboard = () => {
     }
   };
 
+  const getCreditsColor = () => {
+    if (user.credits <= 0) return 'text-red-600';
+    if (user.credits <= 5) return 'text-orange-600';
+    return 'text-green-600';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
