@@ -175,7 +175,7 @@ const AuthPage = () => {
               {isLogin ? 'Willkommen zurück' : 'Konto erstellen'}
             </CardTitle>
             <CardDescription>
-              {isLogin ? 'Melden Sie sich an, um weiter zu erstellen' : 'Starten Sie mit 3 kostenlosen Bildern'}
+              {isLogin ? 'Melden Sie sich an, um weiter zu erstellen' : 'Starten Sie mit 12 kostenlosen Bildern'}
             </CardDescription>
           </CardHeader>
           <CardContent>
