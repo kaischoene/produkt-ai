@@ -228,7 +228,7 @@ class ImageEngine:
                 {
                     "$set": {
                         "status": "failed",
-                        "error_message": "Image generation engine is currently unavailable. Please try again later.",
+                        "error_message": "Die Bildgenerierungs-Engine ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.",
                         "completed_at": datetime.now(timezone.utc)
                     }
                 }
