@@ -312,15 +312,37 @@ const Dashboard = () => {
       return;
     }
 
+    if (!generationForm.prompt && !generationForm.productImage) {
+      toast.error('Please provide either a scene description or upload a product image.');
+      return;
+    }
+
     setIsGenerating(true);
     
     try {
-      const response = await axios.post(`${API}/generate-image`, generationForm, {
+      // Create enhanced prompt based on form data
+      let enhancedPrompt = generationForm.prompt;
+      
+      if (generationForm.productImage) {
+        enhancedPrompt = `Professional product photography of the uploaded product in: ${generationForm.prompt || 'a clean, professional setting'}`;
+      }
+      
+      // Add style and lighting information
+      enhancedPrompt += `. Style: ${generationForm.style}. Lighting: ${generationForm.lighting}. Camera angle: ${generationForm.cameraAngle}.`;
+      
+      const requestData = {
+        prompt: enhancedPrompt,
+        negative_prompt: generationForm.negative_prompt,
+        width: generationForm.width,
+        height: generationForm.height
+      };
+      
+      const response = await axios.post(`${API}/generate-image`, requestData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       
       const { job_id } = response.data;
-      toast.success('Image generation started! Please wait...');
+      toast.success('Image generation started! Creating your professional scene...');
       
       // Poll for completion
       pollImageStatus(job_id);
