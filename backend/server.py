@@ -308,21 +308,21 @@ async def generate_image(
     if current_user.credits <= 0:
         raise HTTPException(
             status_code=403, 
-            detail="Insufficient credits. Please purchase a subscription to continue generating images."
+            detail="Nicht genügend Credits. Bitte kaufen Sie ein Abonnement, um weiterhin Bilder zu generieren."
         )
     
-    # Generate image
+    # Generate image with 4 images in highest resolution
     job_id = await image_engine.generate_image(request, current_user.id)
     
-    # Deduct credit
+    # Deduct credit (4 images = 4 credits)
     await db.users.update_one(
         {"id": current_user.id},
         {
-            "$inc": {"credits": -1, "monthly_credits_used": 1}
+            "$inc": {"credits": -4, "monthly_credits_used": 4}
         }
     )
     
-    return {"job_id": job_id, "status": "processing"}
+    return {"job_id": job_id, "status": "processing", "images_count": 4}
 
 @api_router.get("/image-status/{job_id}")
 async def get_image_status(
