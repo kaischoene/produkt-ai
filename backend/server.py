@@ -82,6 +82,8 @@ class ImageGenerationJob(BaseModel):
     height: int
     status: str = "pending"  # pending/processing/completed/failed
     image_url: Optional[str] = None
+    images: Optional[List[Dict[str, Any]]] = None  # Multiple generated images
+    images_count: Optional[int] = None  # Number of generated images
     error_message: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
