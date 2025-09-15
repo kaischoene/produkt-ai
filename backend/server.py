@@ -475,6 +475,20 @@ async def get_user_images(current_user: User = Depends(get_current_user)):
     
     return [ImageGenerationJob(**img) for img in images]
 
+# Serve generated images
+@api_router.get("/images/{image_filename}")
+async def serve_image(image_filename: str):
+    """Serve generated images from temp directory"""
+    try:
+        image_path = f"/tmp/{image_filename}"
+        if os.path.exists(image_path):
+            return FileResponse(image_path, media_type="image/png")
+        else:
+            # Return a placeholder or 404
+            raise HTTPException(status_code=404, detail="Bild nicht gefunden")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Fehler beim Laden des Bildes")
+
 # Subscription Management
 @api_router.get("/subscription/plans")
 async def get_subscription_plans():
