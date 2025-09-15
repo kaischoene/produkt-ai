@@ -311,6 +311,38 @@ class ImageEngine:
 # Initialize Image Engine
 image_engine = ImageEngine()
 
+# Background task for real image generation
+async def generate_real_images(job_id: str, request: ImageGenerationRequest):
+    """Background task to generate real images using the ImageEngine"""
+    try:
+        print(f"Starting background image generation for job {job_id}")
+        
+        # Get the job from database
+        job = await db.image_jobs.find_one({"id": job_id})
+        if not job:
+            print(f"Job {job_id} not found")
+            return
+        
+        # Use the existing ImageEngine to generate images
+        result_job_id = await image_engine.generate_image(request, job["user_id"])
+        
+        print(f"Background generation completed for job {job_id}")
+        
+    except Exception as e:
+        print(f"Background generation failed for job {job_id}: {str(e)}")
+        
+        # Update job as failed
+        await db.image_jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "error_message": "Bildgenerierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+                    "completed_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+
 # User Management Endpoints
 @api_router.post("/auth/register", response_model=Token)
 async def register_user(user_data: UserCreate):
