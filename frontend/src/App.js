@@ -670,11 +670,24 @@ const Dashboard = () => {
                         <p className="text-xs text-gray-600">Describe a scene idea to get a detailed prompt</p>
                         <div className="flex space-x-2">
                           <Input
+                            id="scene-description-input"
                             placeholder="e.g., a serene zen garden"
                             className="flex-1"
                           />
-                          <Button variant="outline" size="sm">
-                            Get Ideas
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              const input = document.getElementById('scene-description-input');
+                              generateSceneIdeas(input.value);
+                            }}
+                            disabled={isLoadingIdeas}
+                          >
+                            {isLoadingIdeas ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              'Get Ideas'
+                            )}
                           </Button>
                         </div>
                       </div>
