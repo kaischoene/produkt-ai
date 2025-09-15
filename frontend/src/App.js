@@ -888,13 +888,29 @@ const Dashboard = () => {
                       {generatedImages.map((image) => (
                         <Card key={image.id} className="group overflow-hidden hover:shadow-lg transition-all duration-200">
                           <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
-                            {/* Image Preview Placeholder */}
-                            <div className="absolute inset-0 flex items-center justify-center">
+                            {/* ECHTES BILD ANZEIGEN */}
+                            {image.image_url ? (
+                              <img 
+                                src={`${BACKEND_URL}${image.image_url}`}
+                                alt={image.prompt}
+                                className="w-full h-full object-cover rounded-t-lg"
+                                onError={(e) => {
+                                  // Fallback to placeholder if image fails to load
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            
+                            {/* Fallback Placeholder (only shown if image fails to load) */}
+                            <div className={`absolute inset-0 flex items-center justify-center ${image.image_url ? 'hidden' : ''}`}>
                               <div className="text-center space-y-3">
                                 <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center mx-auto">
                                   <ImageIcon className="w-8 h-8 text-gray-600" />
                                 </div>
-                                <p className="text-sm text-gray-700 font-medium">Generiertes Bild</p>
+                                <p className="text-sm text-gray-700 font-medium">
+                                  {image.status === 'processing' ? 'Wird generiert...' : 'Generiertes Bild'}
+                                </p>
                                 <Badge variant="secondary" className="text-xs">
                                   {image.width}×{image.height}
                                 </Badge>
@@ -904,7 +920,19 @@ const Dashboard = () => {
                             {/* Hover Overlay */}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
                               <div className="flex space-x-2">
-                                <Button size="sm" variant="secondary">
+                                <Button 
+                                  size="sm" 
+                                  variant="secondary"
+                                  onClick={() => {
+                                    if (image.image_url) {
+                                      // Download the image
+                                      const link = document.createElement('a');
+                                      link.href = `${BACKEND_URL}${image.image_url}`;
+                                      link.download = `produktai_${image.id}.png`;
+                                      link.click();
+                                    }
+                                  }}
+                                >
                                   <Download className="w-4 h-4" />
                                 </Button>
                                 <Button size="sm" variant="secondary">
