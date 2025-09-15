@@ -847,8 +847,8 @@ const Dashboard = () => {
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">Noch keine Bilder</h3>
                         <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Generieren Sie Ihr erstes professionelles Produktbild, um es hier zu sehen. 
-                          Jedes Bild enthält vollständige Anpassungsoptionen und hochwertige Ausgabe.
+                          Generieren Sie Ihre ersten professionellen Produktbilder, um sie hier zu sehen. 
+                          Sie haben 12 kostenlose Credits für 3 Generierungen (je 4 Bilder).
                         </p>
                         <Button 
                           onClick={() => setActiveTab('generate')}
