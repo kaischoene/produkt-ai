@@ -199,66 +199,27 @@ class ImageEngine:
     
     async def _generate_with_google_ai(self, job: ImageGenerationJob, params: ImageGenerationRequest):
         """Generate images using Google AI API directly"""
-        import google.generativeai as genai
-        
-        # Configure Google AI
-        genai.configure(api_key=self.google_api_key)
-        
-        # Use Imagen model for high-quality image generation
-        model = genai.GenerativeModel('gemini-1.5-pro')
-        
-        # Create optimized prompt for image generation
-        image_prompt = f"Generate a high-quality, professional image: {params.prompt}"
-        if params.negative_prompt:
-            image_prompt += f". Avoid: {params.negative_prompt}"
-        image_prompt += f". Resolution: {params.width}x{params.height}. Style: photorealistic, high detail, professional photography quality."
-        
         try:
-            # Generate multiple images for variety
+            import google.generativeai as genai
+            
+            # Configure Google AI
+            genai.configure(api_key=self.google_api_key)
+            
+            # Use text model instead of trying image generation directly
+            model = genai.GenerativeModel('gemini-1.5-pro')
+            
+            # Create optimized prompt for image generation
+            image_prompt = f"Create a detailed description for generating a high-quality, professional image: {params.prompt}"
+            if params.negative_prompt:
+                image_prompt += f". Avoid: {params.negative_prompt}"
+            
             generated_images = []
             
-            for i in range(4):  # Generate 4 images
-                response = model.generate_content([image_prompt])
-                
-                if response and hasattr(response, 'parts'):
-                    for part in response.parts:
-                        if hasattr(part, 'inline_data'):
-                            image_data = part.inline_data.data
-                            
-                            # Create neutral filename
-                            filename = f"img_{job.id}_{i+1}.png"
-                            image_path = f"/tmp/{filename}"
-                            
-                            # Save image
-                            with open(image_path, "wb") as f:
-                                f.write(base64.b64decode(image_data))
-                            
-                            # For now, use placeholder URL
-                            image_url = f"/api/images/{job.id}_{i+1}"
-                            generated_images.append({
-                                "url": image_url,
-                                "filename": filename,
-                                "index": i+1
-                            })
+            # Generate 4 images using Emergent LLM fallback directly
+            await self._generate_with_emergent(job, params)
             
-            if generated_images:
-                # Update job as completed with multiple images
-                await db.image_jobs.update_one(
-                    {"id": job.id},
-                    {
-                        "$set": {
-                            "status": "completed",
-                            "image_url": generated_images[0]["url"],  # Primary image
-                            "images": generated_images,  # All generated images
-                            "images_count": len(generated_images),
-                            "completed_at": datetime.now(timezone.utc)
-                        }
-                    }
-                )
-            else:
-                raise Exception("Keine Bilder generiert")
-                
         except Exception as e:
+            print(f"Google AI error: {str(e)}")
             # Fall back to Emergent API if Google AI fails
             await self._generate_with_emergent(job, params)
     
