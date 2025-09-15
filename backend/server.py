@@ -403,7 +403,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         "monthly_credits_used": current_user.monthly_credits_used
     }
 
-# Image Generation Endpoints - SIMPLIFIED WORKING VERSION
+# Image Generation Endpoints - REAL IMAGE GENERATION
 @api_router.post("/generate-image")
 async def generate_image(
     request: ImageGenerationRequest,
@@ -417,29 +417,23 @@ async def generate_image(
         )
     
     try:
-        # Create a simple successful job for now - MOCK GENERATION
+        # Create job record
         job = ImageGenerationJob(
             user_id=current_user.id,
             prompt=request.prompt,
             negative_prompt=request.negative_prompt,
             width=request.width,
             height=request.height,
-            status="completed",  # Mark as completed immediately for testing
-            image_url="/api/images/mock_image_1",
-            images=[
-                {"url": "/api/images/mock_image_1", "filename": "mock_1.png", "index": 1},
-                {"url": "/api/images/mock_image_2", "filename": "mock_2.png", "index": 2},
-                {"url": "/api/images/mock_image_3", "filename": "mock_3.png", "index": 3},
-                {"url": "/api/images/mock_image_4", "filename": "mock_4.png", "index": 4}
-            ],
-            images_count=4,
-            completed_at=datetime.now(timezone.utc)
+            status="processing"  # Start as processing
         )
         
         # Store job in database
         await db.image_jobs.insert_one(job.model_dump())
         
-        # Deduct credits (4 credits for 4 images)
+        # Start real image generation in background
+        asyncio.create_task(generate_real_images(job.id, request))
+        
+        # Deduct credits immediately
         await db.users.update_one(
             {"id": current_user.id},
             {
@@ -449,9 +443,9 @@ async def generate_image(
         
         return {
             "job_id": job.id, 
-            "status": "completed", 
+            "status": "processing", 
             "images_count": 4,
-            "message": "4 Bilder erfolgreich generiert (Mock-Version für Testing)"
+            "message": "Bildgenerierung gestartet. Bitte warten Sie..."
         }
         
     except Exception as e:
