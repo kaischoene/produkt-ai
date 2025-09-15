@@ -792,7 +792,7 @@ const Dashboard = () => {
                   <Button 
                     onClick={handleGenerate}
                     className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
-                    disabled={isGenerating || user.credits <= 0}
+                    disabled={isGenerating || user.credits < 4}
                   >
                     {isGenerating ? (
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
