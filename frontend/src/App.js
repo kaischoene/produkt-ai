@@ -817,7 +817,7 @@ const Dashboard = () => {
                   {isGenerating && (
                     <div className="space-y-2">
                       <Progress value={66} className="w-full" />
-                      <p className="text-sm text-gray-600">Ihre professionelle Szene wird generiert...</p>
+                      <p className="text-sm text-gray-600">Ihre 4 professionellen Bilder werden generiert...</p>
                     </div>
                   )}
                 </div>
