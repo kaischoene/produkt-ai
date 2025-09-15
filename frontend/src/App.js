@@ -43,7 +43,7 @@ const AuthContext = React.createContext();
 const useAuth = () => {
   const context = React.useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth muss innerhalb eines AuthProvider verwendet werden');
   }
   return context;
 };
@@ -68,7 +68,7 @@ const AuthProvider = ({ children }) => {
       });
       setUser(response.data);
     } catch (error) {
-      console.error('Failed to fetch user:', error);
+      console.error('Benutzer konnte nicht geladen werden:', error);
       logout();
     } finally {
       setLoading(false);
@@ -81,10 +81,10 @@ const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
       setToken(access_token);
-      toast.success('Successfully logged in!');
+      toast.success('Erfolgreich angemeldet!');
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      toast.error(error.response?.data?.detail || 'Anmeldung fehlgeschlagen');
       return false;
     }
   };
@@ -95,10 +95,10 @@ const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       localStorage.setItem('token', access_token);
       setToken(access_token);
-      toast.success('Account created successfully! You have 3 free images to start.');
+      toast.success('Konto erfolgreich erstellt! Sie haben 3 kostenlose Bilder zum Start.');
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      toast.error(error.response?.data?.detail || 'Registrierung fehlgeschlagen');
       return false;
     }
   };
@@ -107,7 +107,7 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    toast.info('Logged out successfully');
+    toast.info('Erfolgreich abgemeldet');
   };
 
   const value = {
@@ -165,28 +165,28 @@ const AuthPage = () => {
               <Sparkles className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">PixelHub</h1>
-          <p className="text-gray-600">AI-Powered Image Generation Platform</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">ProduktAI</h1>
+          <p className="text-gray-600">KI-gestützte Produktbild-Generierung</p>
         </div>
 
         <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {isLogin ? 'Willkommen zurück' : 'Konto erstellen'}
             </CardTitle>
             <CardDescription>
-              {isLogin ? 'Sign in to continue creating' : 'Start with 3 free images'}
+              {isLogin ? 'Melden Sie sich an, um weiter zu erstellen' : 'Starten Sie mit 3 kostenlosen Bildern'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">E-Mail</Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder="ihre@email.com"
                   value={formData.email}
                   onChange={handleInputChange}
                   required
@@ -196,12 +196,12 @@ const AuthPage = () => {
 
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="username">Benutzername</Label>
                   <Input
                     id="username"
                     name="username"
                     type="text"
-                    placeholder="your_username"
+                    placeholder="ihr_benutzername"
                     value={formData.username}
                     onChange={handleInputChange}
                     required
@@ -211,7 +211,7 @@ const AuthPage = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Passwort</Label>
                 <Input
                   id="password"
                   name="password"
@@ -232,7 +232,7 @@ const AuthPage = () => {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                {isLogin ? 'Sign In' : 'Create Account'}
+                {isLogin ? 'Anmelden' : 'Konto erstellen'}
               </Button>
             </form>
 
@@ -242,7 +242,7 @@ const AuthPage = () => {
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-indigo-600 hover:text-indigo-500 text-sm font-medium"
               >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+                {isLogin ? "Noch kein Konto? Jetzt registrieren" : "Bereits ein Konto? Anmelden"}
               </button>
             </div>
           </CardContent>
@@ -268,14 +268,14 @@ const Dashboard = () => {
     productImage: null
   });
   const [sceneIdeas, setSceneIdeas] = useState([
-    "A luxurious marble background with soft golden lighting",
-    "Minimalist white studio setup with dramatic shadows", 
-    "Rustic wooden table with warm ambient lighting",
-    "Modern gradient background with neon accents",
-    "Natural outdoor setting with sunlight filtering through trees",
-    "Industrial concrete backdrop with moody lighting",
-    "Elegant fabric draping with soft diffused light",
-    "Vintage leather surface with warm tungsten glow"
+    "Luxuriöser Marmor-Hintergrund mit sanftem goldenen Licht",
+    "Minimalistisches weißes Studio-Setup mit dramatischen Schatten", 
+    "Rustikaler Holztisch mit warmem Umgebungslicht",
+    "Moderner Gradient-Hintergrund mit Neon-Akzenten",
+    "Natürliche Outdoor-Umgebung mit durch Bäume filterfndem Sonnenlicht",
+    "Industrieller Beton-Hintergrund mit stimmungsvoller Beleuchtung",
+    "Elegante Stoffdrapierung mit weichem diffusem Licht",
+    "Vintage-Lederoberfläche mit warmem Tungsten-Glanz"
   ]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -292,7 +292,7 @@ const Dashboard = () => {
       const response = await axios.get(`${API}/subscription/plans`);
       setSubscriptionPlans(response.data);
     } catch (error) {
-      console.error('Failed to fetch subscription plans:', error);
+      console.error('Abo-Pläne konnten nicht geladen werden:', error);
     }
   };
 
@@ -303,21 +303,54 @@ const Dashboard = () => {
       });
       setGeneratedImages(response.data);
     } catch (error) {
-      console.error('Failed to fetch user images:', error);
+      console.error('Benutzerbilder konnten nicht geladen werden:', error);
     }
+  };
+
+  const generateSceneIdeas = async (description) => {
+    if (!description.trim()) {
+      toast.error('Bitte geben Sie eine Szenenbeschreibung ein');
+      return;
+    }
+
+    setIsLoadingIdeas(true);
+    try {
+      // Generate enhanced scene ideas based on description
+      const enhancedIdeas = [
+        `Professionelle ${description} mit Studio-Beleuchtung und sauberer Komposition`,
+        `${description} in einer modernen minimalistischen Umgebung mit weichen Schatten`,
+        `Künstlerische Interpretation von ${description} mit dramatischen Lichteffekten`,
+        `${description} mit natürlichem Umgebungslicht und organischen Texturen`,
+        `Kinematische ${description} mit dynamischen Winkeln und reichen Farben`
+      ];
+      
+      setSceneIdeas(enhancedIdeas);
+      document.getElementById('scene-description-input').value = '';
+      toast.success('5 neue Szenenideen für Sie generiert!');
+    } catch (error) {
+      toast.error('Szenenideen konnten nicht generiert werden');
+    } finally {
+      setIsLoadingIdeas(false);
+    }
+  };
+
+  const getCreditsColor = () => {
+    if (user.credits <= 0) return 'text-red-600';
+    if (user.credits <= 5) return 'text-orange-600';
+    return 'text-green-600';
   };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
     
     if (user.credits <= 0) {
-      toast.error('Insufficient credits! Please purchase a subscription to continue.');
+      toast.error('Nicht genügend Credits! Bitte kaufen Sie ein Abonnement, um fortzufahren.');
       setActiveTab('subscription');
       return;
     }
 
     if (!generationForm.prompt && !generationForm.productImage) {
-      toast.error('Please provide either a scene description or upload a product image.');
+      toast.error('Bitte geben Sie eine Szenenbeschreibung ein oder laden Sie ein Produktbild hoch.');
       return;
     }
 
@@ -328,11 +361,11 @@ const Dashboard = () => {
       let enhancedPrompt = generationForm.prompt;
       
       if (generationForm.productImage) {
-        enhancedPrompt = `Professional product photography of the uploaded product in: ${generationForm.prompt || 'a clean, professional setting'}`;
+        enhancedPrompt = `Professionelle Produktfotografie des hochgeladenen Produkts in: ${generationForm.prompt || 'einer sauberen, professionellen Umgebung'}`;
       }
       
       // Add style and lighting information
-      enhancedPrompt += `. Style: ${generationForm.style}. Lighting: ${generationForm.lighting}. Camera angle: ${generationForm.cameraAngle}.`;
+      enhancedPrompt += `. Stil: ${generationForm.style}. Beleuchtung: ${generationForm.lighting}. Kamerawinkel: ${generationForm.cameraAngle}.`;
       
       const requestData = {
         prompt: enhancedPrompt,
@@ -346,14 +379,14 @@ const Dashboard = () => {
       });
       
       const { job_id } = response.data;
-      toast.success('Image generation started! Creating your professional scene...');
+      toast.success('Bildgenerierung gestartet! Ihre professionelle Szene wird erstellt...');
       
       // Poll for completion
       pollImageStatus(job_id);
       await fetchUser(); // Refresh user credits
       
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Image generation failed');
+      toast.error(error.response?.data?.detail || 'Bildgenerierung fehlgeschlagen');
       setIsGenerating(false);
     }
   };
@@ -364,7 +397,7 @@ const Dashboard = () => {
     
     const poll = async () => {
       if (attempts >= maxAttempts) {
-        toast.error('Image generation timed out. Please try again.');
+        toast.error('Bildgenerierung hat zu lange gedauert. Bitte versuchen Sie es erneut.');
         setIsGenerating(false);
         return;
       }
@@ -377,19 +410,19 @@ const Dashboard = () => {
         const job = response.data;
         
         if (job.status === 'completed') {
-          toast.success('Image generated successfully!');
+          toast.success('Bild erfolgreich generiert!');
           fetchUserImages();
           setIsGenerating(false);
           setActiveTab('gallery');
         } else if (job.status === 'failed') {
-          toast.error(job.error_message || 'Image generation failed');
+          toast.error(job.error_message || 'Bildgenerierung fehlgeschlagen');
           setIsGenerating(false);
         } else {
           attempts++;
           setTimeout(poll, 2000);
         }
       } catch (error) {
-        console.error('Failed to check image status:', error);
+        console.error('Bildstatus konnte nicht überprüft werden:', error);
         setIsGenerating(false);
       }
     };
@@ -410,41 +443,8 @@ const Dashboard = () => {
       window.location.href = response.data.checkout_url;
       
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create checkout session');
+      toast.error(error.response?.data?.detail || 'Checkout-Sitzung konnte nicht erstellt werden');
     }
-  };
-
-  const generateSceneIdeas = async (description) => {
-    if (!description.trim()) {
-      toast.error('Please enter a scene description');
-      return;
-    }
-
-    setIsLoadingIdeas(true);
-    try {
-      // Generate enhanced scene ideas based on description
-      const enhancedIdeas = [
-        `Professional ${description} with studio lighting and clean composition`,
-        `${description} in a modern minimalist setting with soft shadows`,
-        `Artistic interpretation of ${description} with dramatic lighting effects`,
-        `${description} with natural ambient lighting and organic textures`,
-        `Cinematic ${description} with dynamic angles and rich colors`
-      ];
-      
-      setSceneIdeas(enhancedIdeas);
-      document.getElementById('scene-description-input').value = '';
-      toast.success('Generated 5 new scene ideas for you!');
-    } catch (error) {
-      toast.error('Failed to generate scene ideas');
-    } finally {
-      setIsLoadingIdeas(false);
-    }
-  };
-
-  const getCreditsColor = () => {
-    if (user.credits <= 0) return 'text-red-600';
-    if (user.credits <= 5) return 'text-orange-600';
-    return 'text-green-600';
   };
 
   return (
@@ -457,19 +457,19 @@ const Dashboard = () => {
               <div className="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">PixelHub</h1>
+              <h1 className="text-xl font-bold text-gray-900">ProduktAI</h1>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Zap className="w-4 h-4 text-indigo-600" />
                 <span className={`font-semibold ${getCreditsColor()}`}>
-                  {user.credits} credits
+                  {user.credits} Credits
                 </span>
               </div>
               
               <Badge variant={user.subscription_status === 'active' ? 'default' : 'secondary'}>
-                {user.subscription_plan || 'Free'}
+                {user.subscription_plan || 'Kostenlos'}
               </Badge>
               
               <Button
@@ -479,7 +479,7 @@ const Dashboard = () => {
                 className="text-gray-600 hover:text-gray-900"
               >
                 <LogOut className="w-4 h-4 mr-1" />
-                Logout
+                Abmelden
               </Button>
             </div>
           </div>
@@ -492,15 +492,15 @@ const Dashboard = () => {
           <TabsList className="grid w-full grid-cols-3 lg:w-96">
             <TabsTrigger value="generate" className="flex items-center space-x-2">
               <Wand2 className="w-4 h-4" />
-              <span>Generate</span>
+              <span>Generieren</span>
             </TabsTrigger>
             <TabsTrigger value="gallery" className="flex items-center space-x-2">
               <Gallery className="w-4 h-4" />
-              <span>Gallery</span>
+              <span>Galerie</span>
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center space-x-2">
               <CreditCard className="w-4 h-4" />
-              <span>Plans</span>
+              <span>Abos</span>
             </TabsTrigger>
           </TabsList>
 
@@ -512,10 +512,10 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-lg">
                     <ImageIcon className="w-5 h-5" />
-                    <span>Your Product</span>
+                    <span>Ihr Produkt</span>
                   </CardTitle>
                   <CardDescription>
-                    Upload your product image to generate professional scenes
+                    Laden Sie Ihr Produktbild hoch, um professionelle Szenen zu generieren
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -527,7 +527,7 @@ const Dashboard = () => {
                           <div className="relative">
                             <img 
                               src={URL.createObjectURL(generationForm.productImage)} 
-                              alt="Product" 
+                              alt="Produkt" 
                               className="max-h-48 mx-auto rounded-lg shadow-md"
                             />
                             <Button
@@ -536,15 +536,15 @@ const Dashboard = () => {
                               className="absolute top-2 right-2"
                               onClick={() => setGenerationForm(prev => ({ ...prev, productImage: null }))}
                             >
-                              Remove
+                              Entfernen
                             </Button>
                           </div>
                         ) : (
                           <>
                             <ImageIcon className="w-12 h-12 text-gray-400 mx-auto" />
                             <div>
-                              <p className="text-lg font-medium text-gray-900">Upload Product Image</p>
-                              <p className="text-sm text-gray-600">Drag and drop or click to browse</p>
+                              <p className="text-lg font-medium text-gray-900">Produktbild hochladen</p>
+                              <p className="text-sm text-gray-600">Ziehen und ablegen oder klicken zum Durchsuchen</p>
                             </div>
                             <input
                               type="file"
@@ -562,7 +562,7 @@ const Dashboard = () => {
                               variant="outline"
                               onClick={() => document.getElementById('product-upload').click()}
                             >
-                              Choose File
+                              Datei auswählen
                             </Button>
                           </>
                         )}
@@ -571,26 +571,26 @@ const Dashboard = () => {
 
                     {/* Lighting Control */}
                     <div className="space-y-2">
-                      <Label>Lighting</Label>
+                      <Label>Beleuchtung</Label>
                       <select
                         className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-sm"
                         value={generationForm.lighting}
                         onChange={(e) => setGenerationForm(prev => ({ ...prev, lighting: e.target.value }))}
                       >
-                        <option value="natural">Natural Light</option>
-                        <option value="studio">Studio Lighting</option>
-                        <option value="dramatic">Dramatic Shadows</option>
-                        <option value="soft">Soft Ambient</option>
-                        <option value="golden">Golden Hour</option>
+                        <option value="natural">Natürliches Licht</option>
+                        <option value="studio">Studio-Beleuchtung</option>
+                        <option value="dramatic">Dramatische Schatten</option>
+                        <option value="soft">Weiches Umgebungslicht</option>
+                        <option value="golden">Goldene Stunde</option>
                         <option value="neon">Neon/Modern</option>
                       </select>
                     </div>
 
                     {/* Aspect Ratio */}
                     <div className="space-y-2">
-                      <Label>Aspect Ratio</Label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {['1:1', '4:3', '16:9', '3:4'].map((ratio) => (
+                      <Label>Seitenverhältnis</Label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {['1:1', '4:3', '16:9', '3:4', '9:16'].map((ratio) => (
                           <Button
                             key={ratio}
                             variant={generationForm.aspectRatio === ratio ? 'default' : 'outline'}
@@ -615,18 +615,18 @@ const Dashboard = () => {
 
                     {/* Camera Perspective */}
                     <div className="space-y-2">
-                      <Label>Camera Perspective</Label>
+                      <Label>Kameraperspektive</Label>
                       <select
                         className="w-full h-10 px-3 rounded-md border border-gray-300 bg-white text-sm"
                         value={generationForm.cameraAngle}
                         onChange={(e) => setGenerationForm(prev => ({ ...prev, cameraAngle: e.target.value }))}
                       >
-                        <option value="front">Front View</option>
-                        <option value="angle">3/4 Angle</option>
-                        <option value="side">Side View</option>
-                        <option value="top">Top Down</option>
-                        <option value="low">Low Angle</option>
-                        <option value="high">High Angle</option>
+                        <option value="front">Frontalansicht</option>
+                        <option value="angle">3/4 Winkel</option>
+                        <option value="side">Seitenansicht</option>
+                        <option value="top">Von oben</option>
+                        <option value="low">Niedriger Winkel</option>
+                        <option value="high">Hoher Winkel</option>
                       </select>
                     </div>
                   </div>
@@ -638,20 +638,20 @@ const Dashboard = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2 text-lg">
                     <Palette className="w-5 h-5" />
-                    <span>Create Your Own Scene</span>
+                    <span>Ihre eigene Szene erstellen</span>
                   </CardTitle>
                   <CardDescription>
-                    Describe your ideal scene or get AI-powered suggestions
+                    Beschreiben Sie Ihre ideale Szene oder lassen Sie sich KI-gestützte Vorschläge machen
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
                     {/* Manual Scene Description */}
                     <div className="space-y-2">
-                      <Label htmlFor="prompt">Scene Description</Label>
+                      <Label htmlFor="prompt">Szenenbeschreibung</Label>
                       <Textarea
                         id="prompt"
-                        placeholder="e.g., A sunny beach with palm trees and turquoise water..."
+                        placeholder="z.B. Ein sonniger Strand mit Palmen und türkisem Wasser..."
                         value={generationForm.prompt}
                         onChange={(e) => setGenerationForm(prev => ({ ...prev, prompt: e.target.value }))}
                         className="min-h-[100px]"
@@ -661,17 +661,17 @@ const Dashboard = () => {
                     {/* Scene Ideas Section */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium">Or Get Scene Ideas</Label>
+                        <Label className="text-base font-medium">Oder Szenenideen erhalten</Label>
                       </div>
                       
                       {/* From Description */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">From a Description</Label>
-                        <p className="text-xs text-gray-600">Describe a scene idea to get a detailed prompt</p>
+                        <Label className="text-sm font-medium">Aus einer Beschreibung</Label>
+                        <p className="text-xs text-gray-600">Beschreiben Sie eine Szenenidee, um einen detaillierten Prompt zu erhalten</p>
                         <div className="flex space-x-2">
                           <Input
                             id="scene-description-input"
-                            placeholder="e.g., a serene zen garden"
+                            placeholder="z.B. ein ruhiger Zen-Garten"
                             className="flex-1"
                           />
                           <Button 
@@ -686,26 +686,26 @@ const Dashboard = () => {
                             {isLoadingIdeas ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
-                              'Get Ideas'
+                              'Ideen erhalten'
                             )}
                           </Button>
                         </div>
                       </div>
 
-                      <div className="text-center text-xs text-gray-500 font-medium">OR</div>
+                      <div className="text-center text-xs text-gray-500 font-medium">ODER</div>
 
                       {/* From Style Image */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">From a Style Image</Label>
-                        <p className="text-xs text-gray-600">Upload an image to inspire suggestions</p>
+                        <Label className="text-sm font-medium">Aus einem Stilbild</Label>
+                        <p className="text-xs text-gray-600">Laden Sie ein Bild hoch, um Vorschläge zu inspirieren</p>
                         <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center">
                           <div className="space-y-2">
                             <div className="w-8 h-8 bg-gray-100 rounded-md mx-auto flex items-center justify-center">
                               <ImageIcon className="w-4 h-4 text-gray-400" />
                             </div>
-                            <p className="text-xs text-gray-600">Upload Style</p>
+                            <p className="text-xs text-gray-600">Stil hochladen</p>
                             <Button variant="outline" size="sm">
-                              Get Ideas from Image
+                              Ideen aus Bild erhalten
                             </Button>
                           </div>
                         </div>
@@ -714,7 +714,7 @@ const Dashboard = () => {
 
                     {/* Quick Scene Ideas */}
                     <div className="space-y-2">
-                      <Label className="text-sm font-medium">Quick Scene Ideas</Label>
+                      <Label className="text-sm font-medium">Schnelle Szenenideen</Label>
                       <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
                         {sceneIdeas.map((idea, index) => (
                           <Button
@@ -739,41 +739,41 @@ const Dashboard = () => {
                           // Shuffle the existing ideas for variety
                           const shuffled = [...sceneIdeas].sort(() => Math.random() - 0.5);
                           setSceneIdeas(shuffled);
-                          toast.success('Refreshed scene ideas!');
+                          toast.success('Szenenideen aktualisiert!');
                         }}
                       >
                         <Star className="w-3 h-3 mr-1" />
-                        Refresh Ideas
+                        Ideen aktualisieren
                       </Button>
                     </div>
 
                     {/* Advanced Options */}
                     <div className="space-y-4 pt-4 border-t border-gray-200">
-                      <Label className="text-sm font-medium">Advanced Options</Label>
+                      <Label className="text-sm font-medium">Erweiterte Optionen</Label>
                       
                       {/* Style Selection */}
                       <div className="space-y-2">
-                        <Label className="text-xs">Style</Label>
+                        <Label className="text-xs">Stil</Label>
                         <select
                           className="w-full h-9 px-2 rounded-md border border-gray-300 bg-white text-xs"
                           value={generationForm.style}
                           onChange={(e) => setGenerationForm(prev => ({ ...prev, style: e.target.value }))}
                         >
-                          <option value="realistic">Realistic</option>
-                          <option value="artistic">Artistic</option>
+                          <option value="realistic">Realistisch</option>
+                          <option value="artistic">Künstlerisch</option>
                           <option value="minimal">Minimal</option>
                           <option value="vintage">Vintage</option>
                           <option value="modern">Modern</option>
-                          <option value="cinematic">Cinematic</option>
+                          <option value="cinematic">Kinematisch</option>
                         </select>
                       </div>
 
                       {/* What to Avoid */}
                       <div className="space-y-2">
-                        <Label htmlFor="negative_prompt" className="text-xs">What to Avoid (Optional)</Label>
+                        <Label htmlFor="negative_prompt" className="text-xs">Was vermieden werden soll (Optional)</Label>
                         <Input
                           id="negative_prompt"
-                          placeholder="blurry, low quality, dark..."
+                          placeholder="unscharf, niedrige Qualität, dunkel..."
                           value={generationForm.negative_prompt}
                           onChange={(e) => setGenerationForm(prev => ({ ...prev, negative_prompt: e.target.value }))}
                           className="h-9 text-xs"
@@ -799,17 +799,17 @@ const Dashboard = () => {
                     ) : (
                       <ImageIcon className="w-5 h-5 mr-2" />
                     )}
-                    {isGenerating ? 'Generating Your Scene...' : `Generate Image (${user.credits} credits left)`}
+                    {isGenerating ? 'Ihre Szene wird generiert...' : `Bild generieren (${user.credits} Credits verbleibend)`}
                   </Button>
 
                   {user.credits <= 0 && (
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                       <div className="flex items-center space-x-2 text-orange-700">
                         <AlertTriangle className="w-5 h-5" />
-                        <span className="font-medium">No credits remaining</span>
+                        <span className="font-medium">Keine Credits mehr vorhanden</span>
                       </div>
                       <p className="text-orange-600 text-sm mt-1">
-                        Please purchase a subscription to continue generating images.
+                        Bitte kaufen Sie ein Abonnement, um weiterhin Bilder zu generieren.
                       </p>
                     </div>
                   )}
@@ -817,7 +817,7 @@ const Dashboard = () => {
                   {isGenerating && (
                     <div className="space-y-2">
                       <Progress value={66} className="w-full" />
-                      <p className="text-sm text-gray-600">Generating your professional scene...</p>
+                      <p className="text-sm text-gray-600">Ihre professionelle Szene wird generiert...</p>
                     </div>
                   )}
                 </div>
@@ -831,10 +831,10 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Gallery className="w-5 h-5" />
-                  <span>Your Creations</span>
+                  <span>Ihre Kreationen</span>
                 </CardTitle>
                 <CardDescription>
-                  View, download, and manage your generated images
+                  Betrachten, herunterladen und verwalten Sie Ihre generierten Bilder
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -845,17 +845,17 @@ const Dashboard = () => {
                         <ImageIcon className="w-8 h-8 text-gray-400" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No images yet</h3>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Noch keine Bilder</h3>
                         <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Generate your first professional product image to see it here. 
-                          Each image includes full customization options and high-quality output.
+                          Generieren Sie Ihr erstes professionelles Produktbild, um es hier zu sehen. 
+                          Jedes Bild enthält vollständige Anpassungsoptionen und hochwertige Ausgabe.
                         </p>
                         <Button 
                           onClick={() => setActiveTab('generate')}
                           className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
                         >
                           <Wand2 className="w-4 h-4 mr-2" />
-                          Start Creating
+                          Erstellen beginnen
                         </Button>
                       </div>
                     </div>
@@ -866,19 +866,19 @@ const Dashboard = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <Badge variant="secondary" className="text-sm">
-                          {generatedImages.length} images generated
+                          {generatedImages.length} Bilder generiert
                         </Badge>
                         <Badge variant="outline" className="text-sm">
-                          {user.monthly_credits_used} credits used this month
+                          {user.monthly_credits_used} Credits diesen Monat verwendet
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button variant="outline" size="sm">
                           <Download className="w-4 h-4 mr-1" />
-                          Download All
+                          Alle herunterladen
                         </Button>
                         <Button variant="outline" size="sm">
-                          Export Gallery
+                          Galerie exportieren
                         </Button>
                       </div>
                     </div>
@@ -894,7 +894,7 @@ const Dashboard = () => {
                                 <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center mx-auto">
                                   <ImageIcon className="w-8 h-8 text-gray-600" />
                                 </div>
-                                <p className="text-sm text-gray-700 font-medium">Generated Image</p>
+                                <p className="text-sm text-gray-700 font-medium">Generiertes Bild</p>
                                 <Badge variant="secondary" className="text-xs">
                                   {image.width}×{image.height}
                                 </Badge>
@@ -908,10 +908,10 @@ const Dashboard = () => {
                                   <Download className="w-4 h-4" />
                                 </Button>
                                 <Button size="sm" variant="secondary">
-                                  Share
+                                  Teilen
                                 </Button>
                                 <Button size="sm" variant="secondary">
-                                  Edit
+                                  Bearbeiten
                                 </Button>
                               </div>
                             </div>
@@ -922,7 +922,9 @@ const Dashboard = () => {
                                 variant={image.status === 'completed' ? 'default' : 'secondary'}
                                 className="text-xs capitalize"
                               >
-                                {image.status}
+                                {image.status === 'completed' ? 'Abgeschlossen' : 
+                                 image.status === 'processing' ? 'Wird verarbeitet' : 
+                                 image.status === 'pending' ? 'Wartend' : 'Fehlgeschlagen'}
                               </Badge>
                             </div>
                           </div>
@@ -935,18 +937,22 @@ const Dashboard = () => {
                               </p>
                               {image.negative_prompt && (
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Avoiding: {image.negative_prompt}
+                                  Vermieden: {image.negative_prompt}
                                 </p>
                               )}
                             </div>
                             
                             {/* Image Details */}
                             <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>{new Date(image.created_at).toLocaleDateString()}</span>
+                              <span>{new Date(image.created_at).toLocaleDateString('de-DE')}</span>
                               <div className="flex items-center space-x-2">
                                 <span>{image.width}×{image.height}</span>
                                 <span>•</span>
-                                <span className="capitalize">{image.status}</span>
+                                <span className="capitalize">
+                                  {image.status === 'completed' ? 'Abgeschlossen' : 
+                                   image.status === 'processing' ? 'Verarbeitung' : 
+                                   image.status === 'pending' ? 'Wartend' : 'Fehlgeschlagen'}
+                                </span>
                               </div>
                             </div>
                             
@@ -954,10 +960,10 @@ const Dashboard = () => {
                             <div className="flex space-x-2 pt-2">
                               <Button size="sm" variant="outline" className="flex-1 text-xs">
                                 <Download className="w-3 h-3 mr-1" />
-                                Download
+                                Herunterladen
                               </Button>
                               <Button size="sm" variant="outline" className="flex-1 text-xs">
-                                Regenerate
+                                Neu generieren
                               </Button>
                             </div>
                           </CardContent>
@@ -969,7 +975,7 @@ const Dashboard = () => {
                     {generatedImages.length >= 9 && (
                       <div className="text-center pt-4">
                         <Button variant="outline">
-                          Load More Images
+                          Weitere Bilder laden
                         </Button>
                       </div>
                     )}
@@ -985,10 +991,10 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Crown className="w-5 h-5" />
-                  <span>Subscription Plans</span>
+                  <span>Abonnement-Pläne</span>
                 </CardTitle>
                 <CardDescription>
-                  Choose the perfect plan for your creative needs
+                  Wählen Sie den perfekten Plan für Ihre kreativen Bedürfnisse
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -998,7 +1004,7 @@ const Dashboard = () => {
                       {planId === 'premium' && (
                         <Badge className="absolute -top-2 left-4 bg-indigo-600">
                           <Star className="w-3 h-3 mr-1" />
-                          Popular
+                          Beliebt
                         </Badge>
                       )}
                       
@@ -1006,7 +1012,7 @@ const Dashboard = () => {
                         <CardTitle className="text-xl">{plan.name}</CardTitle>
                         <div className="text-3xl font-bold text-indigo-600">
                           €{plan.price}
-                          <span className="text-sm text-gray-500 font-normal">/month</span>
+                          <span className="text-sm text-gray-500 font-normal">/Monat</span>
                         </div>
                       </CardHeader>
                       
@@ -1015,22 +1021,22 @@ const Dashboard = () => {
                           <div className="text-2xl font-bold text-gray-900">
                             {plan.monthly_credits}
                           </div>
-                          <div className="text-sm text-gray-600">images per month</div>
+                          <div className="text-sm text-gray-600">Bilder pro Monat</div>
                         </div>
                         
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center space-x-2">
                             <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span>High-quality generation</span>
+                            <span>Hochwertige Generierung</span>
                           </div>
                           <div className="flex items-center space-x-2">
                             <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span>Custom dimensions</span>
+                            <span>Benutzerdefinierte Dimensionen</span>
                           </div>
                           {planId !== 'basic' && (
                             <div className="flex items-center space-x-2">
                               <CheckCircle className="w-4 h-4 text-green-500" />
-                              <span>Priority processing</span>
+                              <span>Priorisierte Verarbeitung</span>
                             </div>
                           )}
                         </div>
@@ -1041,7 +1047,7 @@ const Dashboard = () => {
                           onClick={() => handleSubscription(planId)}
                           disabled={user.subscription_plan === planId}
                         >
-                          {user.subscription_plan === planId ? 'Current Plan' : 'Choose Plan'}
+                          {user.subscription_plan === planId ? 'Aktueller Plan' : 'Plan wählen'}
                         </Button>
                       </CardContent>
                     </Card>
@@ -1078,7 +1084,7 @@ const AppContent = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-indigo-600" />
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Lädt...</p>
         </div>
       </div>
     );
@@ -1113,7 +1119,7 @@ const SubscriptionSuccess = () => {
     const poll = async () => {
       if (attempts >= maxAttempts) {
         setIsProcessing(false);
-        toast.error('Payment verification timed out. Please contact support.');
+        toast.error('Zahlungsverifizierung abgelaufen. Bitte kontaktieren Sie den Support.');
         return;
       }
 
@@ -1125,17 +1131,17 @@ const SubscriptionSuccess = () => {
         if (response.data.payment_status === 'paid') {
           await fetchUser();
           setIsProcessing(false);
-          toast.success('Subscription activated successfully!');
+          toast.success('Abonnement erfolgreich aktiviert!');
         } else if (response.data.status === 'expired') {
           setIsProcessing(false);
-          toast.error('Payment session expired.');
+          toast.error('Zahlungssitzung abgelaufen.');
         } else {
           attempts++;
           setTimeout(poll, 2000);
         }
       } catch (error) {
         setIsProcessing(false);
-        toast.error('Failed to verify payment status.');
+        toast.error('Zahlungsstatus konnte nicht verifiziert werden.');
       }
     };
 
@@ -1149,16 +1155,16 @@ const SubscriptionSuccess = () => {
           {isProcessing ? (
             <>
               <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-indigo-600" />
-              <h2 className="text-xl font-semibold mb-2">Processing Payment...</h2>
-              <p className="text-gray-600">Please wait while we activate your subscription.</p>
+              <h2 className="text-xl font-semibold mb-2">Zahlung wird verarbeitet...</h2>
+              <p className="text-gray-600">Bitte warten Sie, während wir Ihr Abonnement aktivieren.</p>
             </>
           ) : (
             <>
               <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-              <h2 className="text-xl font-semibold mb-2">Subscription Activated!</h2>
-              <p className="text-gray-600 mb-4">Your subscription has been activated successfully.</p>
+              <h2 className="text-xl font-semibold mb-2">Abonnement aktiviert!</h2>
+              <p className="text-gray-600 mb-4">Ihr Abonnement wurde erfolgreich aktiviert.</p>
               <Button onClick={() => window.location.href = '/'}>
-                Go to Dashboard
+                Zum Dashboard
               </Button>
             </>
           )}
@@ -1174,10 +1180,10 @@ const SubscriptionCancel = () => {
       <Card className="w-full max-w-md text-center">
         <CardContent className="pt-6">
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-          <h2 className="text-xl font-semibold mb-2">Payment Cancelled</h2>
-          <p className="text-gray-600 mb-4">Your payment was cancelled. You can try again anytime.</p>
+          <h2 className="text-xl font-semibold mb-2">Zahlung abgebrochen</h2>
+          <p className="text-gray-600 mb-4">Ihre Zahlung wurde abgebrochen. Sie können es jederzeit erneut versuchen.</p>
           <Button onClick={() => window.location.href = '/'}>
-            Return to Dashboard
+            Zurück zum Dashboard
           </Button>
         </CardContent>
       </Card>
