@@ -260,8 +260,20 @@ const Dashboard = () => {
     prompt: '',
     negative_prompt: '',
     width: 1024,
-    height: 1024
+    height: 1024,
+    lighting: 'natural',
+    aspectRatio: '1:1',
+    cameraAngle: 'front',
+    style: 'realistic',
+    productImage: null
   });
+  const [sceneIdeas, setSceneIdeas] = useState([
+    "A luxurious marble background with soft golden lighting",
+    "Minimalist white studio setup with dramatic shadows",
+    "Rustic wooden table with warm ambient lighting",
+    "Modern gradient background with neon accents",
+    "Natural outdoor setting with sunlight filtering through trees"
+  ]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState({});
