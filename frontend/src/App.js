@@ -361,8 +361,8 @@ const Dashboard = () => {
 
   const handleSubscription = async (planId) => {
     try {
-      const response = await axios.post(`${API}/subscription/checkout`, 
-        { plan_id: planId }, 
+      const response = await axios.post(`${API}/subscription/checkout?plan_id=${planId}`, 
+        {}, 
         {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         }
