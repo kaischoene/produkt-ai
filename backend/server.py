@@ -36,7 +36,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 # Create the main app
-app = FastAPI(title="PixelHub - White Label Image Generation Platform")
+app = FastAPI(title="ProduktAI - White Label Produktbild-Generierungsplattform")
 api_router = APIRouter(prefix="/api")
 
 # Pydantic Models
