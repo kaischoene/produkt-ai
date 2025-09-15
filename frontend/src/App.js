@@ -379,7 +379,7 @@ const Dashboard = () => {
       });
       
       const { job_id } = response.data;
-      toast.success('Bildgenerierung gestartet! Ihre professionelle Szene wird erstellt...');
+      toast.success('Bildgenerierung gestartet! 4 professionelle Bilder werden erstellt...');
       
       // Poll for completion
       pollImageStatus(job_id);
