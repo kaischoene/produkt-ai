@@ -343,8 +343,8 @@ const Dashboard = () => {
   const handleGenerate = async (e) => {
     e.preventDefault();
     
-    if (user.credits <= 0) {
-      toast.error('Nicht genügend Credits! Bitte kaufen Sie ein Abonnement, um fortzufahren.');
+    if (user.credits < 4) {
+      toast.error('Nicht genügend Credits! Sie benötigen 4 Credits für eine Bildgenerierung.');
       setActiveTab('subscription');
       return;
     }
