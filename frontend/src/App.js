@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
+import NooviLandingPage from './NooviLandingPage';
 
 // Import Shadcn UI components
 import { Button } from './components/ui/button';
@@ -1132,7 +1133,8 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Dashboard /> : <AuthPage />} />
+      <Route path="/" element={<NooviLandingPage />} />
+      <Route path="/app" element={user ? <Dashboard /> : <AuthPage />} />
       <Route path="/subscription/success" element={<SubscriptionSuccess />} />
       <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
       <Route path="*" element={<Navigate to="/" replace />} />
