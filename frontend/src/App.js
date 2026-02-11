@@ -338,6 +338,7 @@ const Dashboard = () => {
   };
 
   const getCreditsColor = () => {
+    if (!user) return 'text-gray-600';
     if (user.credits <= 0) return 'text-red-600';
     if (user.credits <= 5) return 'text-orange-600';
     return 'text-green-600';
@@ -346,7 +347,7 @@ const Dashboard = () => {
   const handleGenerate = async (e) => {
     e.preventDefault();
     
-    if (user.credits < 4) {
+    if (!user || user.credits < 4) {
       toast.error('Nicht genügend Credits! Sie benötigen 4 Credits für eine Bildgenerierung.');
       setActiveTab('subscription');
       return;
@@ -464,26 +465,32 @@ const Dashboard = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Zap className="w-4 h-4 text-indigo-600" />
-                <span className={`font-semibold ${getCreditsColor()}`}>
-                  {user.credits} Credits
-                </span>
-              </div>
-              
-              <Badge variant={user.subscription_status === 'active' ? 'default' : 'secondary'}>
-                {user.subscription_plan || 'Kostenlos'}
-              </Badge>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                <LogOut className="w-4 h-4 mr-1" />
-                Abmelden
-              </Button>
+              {user ? (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Zap className="w-4 h-4 text-indigo-600" />
+                    <span className={`font-semibold ${getCreditsColor()}`}>
+                      {user.credits} Credits
+                    </span>
+                  </div>
+
+                  <Badge variant={user.subscription_status === 'active' ? 'default' : 'secondary'}>
+                    {user.subscription_plan || 'Kostenlos'}
+                  </Badge>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={logout}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Abmelden
+                  </Button>
+                </>
+              ) : (
+                <Badge variant="secondary">Demo-Modus</Badge>
+              )}
             </div>
           </div>
         </div>
@@ -810,17 +817,17 @@ const Dashboard = () => {
                   <Button 
                     onClick={handleGenerate}
                     className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
-                    disabled={isGenerating || user.credits < 4}
+                    disabled={isGenerating || !user || (user && user.credits < 4)}
                   >
                     {isGenerating ? (
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
                     ) : (
                       <ImageIcon className="w-5 h-5 mr-2" />
                     )}
-                    {isGenerating ? 'Ihre 4 Szenen werden generiert...' : `4 Bilder generieren (${user.credits} Credits verbleibend)`}
+                    {isGenerating ? 'Ihre 4 Szenen werden generiert...' : `4 Bilder generieren (${user ? user.credits : 0} Credits verbleibend)`}
                   </Button>
 
-                  {user.credits < 4 && (
+                  {(!user || user.credits < 4) && (
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                       <div className="flex items-center space-x-2 text-orange-700">
                         <AlertTriangle className="w-5 h-5" />
@@ -887,7 +894,7 @@ const Dashboard = () => {
                           {generatedImages.length} Bilder generiert
                         </Badge>
                         <Badge variant="outline" className="text-sm">
-                          {user.monthly_credits_used} Credits diesen Monat verwendet
+                          {user ? user.monthly_credits_used : 0} Credits diesen Monat verwendet
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -1150,7 +1157,8 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Dashboard /> : <AuthPage />} />
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/login" element={<AuthPage />} />
       <Route path="/youmedia" element={<YouMediaWebsite />} />
       <Route path="/noovi" element={<NooviLandingPage />} />
       <Route path="/subscription/success" element={<SubscriptionSuccess />} />
