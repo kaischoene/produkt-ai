@@ -36,6 +36,7 @@ jobs:
         working-directory: frontend
         run: yarn build
         env:
+          PUBLIC_URL: /produkt-ai
           REACT_APP_BACKEND_URL: ''
 
       - name: Setup Pages
