@@ -1134,9 +1134,9 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<NooviLandingPage />} />
+      <Route path="/" element={<YouMediaWebsite />} />
       <Route path="/app" element={user ? <Dashboard /> : <AuthPage />} />
-      <Route path="/youmedia" element={<YouMediaWebsite />} />
+      <Route path="/noovi" element={<NooviLandingPage />} />
       <Route path="/subscription/success" element={<SubscriptionSuccess />} />
       <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
       <Route path="*" element={<Navigate to="/" replace />} />
