@@ -50,7 +50,7 @@ export const generateImage = async (prompt, options = {}) => {
   }
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash-image',
     contents: prompt,
     config,
   });
@@ -82,7 +82,7 @@ export const generateWithReferences = async (prompt, referenceImages, options = 
   }
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash-image',
     contents,
     config,
   });
@@ -95,7 +95,7 @@ export const analyzeImage = async (base64Data, mimeType = 'image/png') => {
   const ai = getClient();
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     contents: [
       {
         text: `Analysiere dieses Bild und erstelle einen ultra-detaillierten Prompt auf Englisch, der das Bild exakt nachbilden koennte.
@@ -156,7 +156,7 @@ export const combineImages = async (images, prompt, options = {}) => {
   }
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-flash-image',
     contents,
     config,
   });
