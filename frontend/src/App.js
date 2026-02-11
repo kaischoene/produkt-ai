@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 import NooviLandingPage from './NooviLandingPage';
+import YouMediaWebsite from './YouMediaWebsite';
 
 // Import Shadcn UI components
 import { Button } from './components/ui/button';
@@ -1135,6 +1136,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={<NooviLandingPage />} />
       <Route path="/app" element={user ? <Dashboard /> : <AuthPage />} />
+      <Route path="/youmedia" element={<YouMediaWebsite />} />
       <Route path="/subscription/success" element={<SubscriptionSuccess />} />
       <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
       <Route path="*" element={<Navigate to="/" replace />} />
