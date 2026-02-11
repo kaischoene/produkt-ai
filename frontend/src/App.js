@@ -1124,7 +1124,7 @@ const Dashboard = () => {
 const App = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={process.env.PUBLIC_URL}>
         <div className="App">
           <AppContent />
           <Toaster position="top-right" />
