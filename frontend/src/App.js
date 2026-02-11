@@ -4,6 +4,7 @@ import axios from 'axios';
 import './App.css';
 import NooviLandingPage from './NooviLandingPage';
 import YouMediaWebsite from './YouMediaWebsite';
+import CreativeStudio from './CreativeStudio';
 
 // Import Shadcn UI components
 import { Button } from './components/ui/button';
@@ -257,7 +258,7 @@ const AuthPage = () => {
 // Main Dashboard
 const Dashboard = () => {
   const { user, logout, fetchUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('generate');
+  const [activeTab, setActiveTab] = useState('studio');
   const [generationForm, setGenerationForm] = useState({
     prompt: '',
     negative_prompt: '',
@@ -491,7 +492,11 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-96">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[520px]">
+            <TabsTrigger value="studio" className="flex items-center space-x-2">
+              <Sparkles className="w-4 h-4" />
+              <span>Studio</span>
+            </TabsTrigger>
             <TabsTrigger value="generate" className="flex items-center space-x-2">
               <Wand2 className="w-4 h-4" />
               <span>Generieren</span>
@@ -505,6 +510,17 @@ const Dashboard = () => {
               <span>Abos</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Studio Tab */}
+          <TabsContent value="studio" className="space-y-6">
+            <CreativeStudio
+              user={user}
+              onJobComplete={() => {
+                fetchUserImages();
+                fetchUser();
+              }}
+            />
+          </TabsContent>
 
           {/* Generate Tab */}
           <TabsContent value="generate" className="space-y-6">

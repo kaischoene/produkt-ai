@@ -75,6 +75,15 @@ class ImageGenerationRequest(BaseModel):
     width: int = Field(default=1024, ge=512, le=2048)
     height: int = Field(default=1024, ge=512, le=2048)
 
+class AnalyzeImageRequest(BaseModel):
+    image_data: str  # Base64-encoded image
+
+class CombineImagesRequest(BaseModel):
+    images: List[str]  # List of base64-encoded images (up to 5)
+    prompt: str  # User description of how to combine
+    width: int = Field(default=1024, ge=512, le=2048)
+    height: int = Field(default=1024, ge=512, le=2048)
+
 class ImageGenerationJob(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
@@ -962,6 +971,170 @@ async def test_generate_image(
         }
     except Exception as e:
         return {"error": str(e), "status": "failed"}
+
+# ==========================================
+# Image Analysis & Combine Endpoints
+# ==========================================
+
+@api_router.post("/analyze-image")
+async def analyze_image(
+    request: AnalyzeImageRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Analyze an uploaded image and generate an ultra-detailed image prompt."""
+    try:
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="API key not configured")
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"analyze_{str(uuid.uuid4())[:8]}",
+            system_message=(
+                "Du bist ein Experte fuer Bildbeschreibung und Prompt-Engineering. "
+                "Deine Aufgabe ist es, ein hochgeladenes Bild extrem detailliert zu analysieren "
+                "und daraus einen perfekten, ultra-detaillierten Bildprompt auf Englisch zu erstellen, "
+                "der das Bild exakt reproduzieren koennte. "
+                "Beschreibe: Komposition, Farben, Beleuchtung, Texturen, Stimmung, Perspektive, "
+                "Schaerfe, Bokeh, Stil, Objekte, Hintergrund und alle weiteren relevanten Details. "
+                "Gib NUR den fertigen Prompt zurueck, ohne Erklaerungen oder Einleitungen."
+            )
+        )
+
+        chat.with_model("gemini", "gemini-2.5-flash-preview")
+
+        # Send the image with analysis request
+        msg = UserMessage(
+            text="Analysiere dieses Bild und erstelle einen ultra-detaillierten Bildprompt auf Englisch, der dieses Bild exakt reproduzieren koennte. Gib NUR den Prompt zurueck.",
+            images=[request.image_data]
+        )
+
+        response = await chat.send_message(msg)
+
+        return {
+            "prompt": response.strip(),
+            "status": "success"
+        }
+
+    except Exception as e:
+        print(f"Image analysis error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Bildanalyse fehlgeschlagen: {str(e)}"
+        )
+
+
+@api_router.post("/combine-images")
+async def combine_images(
+    request: CombineImagesRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Combine up to 5 uploaded images into a new image based on a user prompt."""
+    if len(request.images) < 1 or len(request.images) > 5:
+        raise HTTPException(status_code=400, detail="Bitte 1-5 Bilder hochladen")
+
+    if current_user.credits < 4:
+        raise HTTPException(
+            status_code=403,
+            detail="Nicht genuegend Credits. Sie benoetigen 4 Credits."
+        )
+
+    try:
+        # Create job record
+        job = ImageGenerationJob(
+            user_id=current_user.id,
+            prompt=f"[COMBINE {len(request.images)} images] {request.prompt}",
+            width=request.width,
+            height=request.height,
+            status="processing"
+        )
+        await db.image_jobs.insert_one(job.model_dump())
+
+        # Deduct credits
+        await db.users.update_one(
+            {"id": current_user.id},
+            {"$inc": {"credits": -4, "monthly_credits_used": 4}}
+        )
+
+        # Start generation in background
+        asyncio.create_task(
+            generate_combined_image(job.id, request)
+        )
+
+        return {
+            "job_id": job.id,
+            "status": "processing",
+            "message": "Bildkombination gestartet..."
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Combine images error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Fehler beim Kombinieren der Bilder")
+
+
+async def generate_combined_image(job_id: str, request: CombineImagesRequest):
+    """Background task to combine multiple images into one using Nano Banana."""
+    try:
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            await mark_job_failed(job_id, "API key not configured")
+            return
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"combine_{str(uuid.uuid4())[:8]}",
+            system_message="You are a professional AI image generator. You combine multiple reference images into a single cohesive new image based on user instructions."
+        )
+
+        chat.with_model("gemini", "gemini-2.5-flash-image-preview").with_params(
+            modalities=["image", "text"]
+        )
+
+        # Build the prompt with all images
+        combine_prompt = (
+            f"I am providing {len(request.images)} reference images. "
+            f"Please create a single new, cohesive image that combines these images "
+            f"according to these instructions: {request.prompt}. "
+            f"The result should be a professional, high-quality image."
+        )
+
+        msg = UserMessage(text=combine_prompt, images=request.images)
+        text_response, images = await chat.send_message_multimodal_response(msg)
+
+        generated_images = []
+
+        if images and len(images) > 0:
+            for i, image_data in enumerate(images[:4]):
+                try:
+                    image_bytes = base64.b64decode(image_data['data'])
+                    filename = f"img_{job_id}_{i+1}.png"
+                    image_path = f"/tmp/{filename}"
+
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+
+                    generated_images.append({
+                        "url": f"/api/images/{filename}",
+                        "filename": filename,
+                        "index": i + 1,
+                        "source": "nano-banana-combine"
+                    })
+                except Exception as img_err:
+                    print(f"Error saving combined image {i+1}: {str(img_err)}")
+                    continue
+
+        if generated_images:
+            await update_job_completed(job_id, generated_images)
+            print(f"Combined image generation completed for job {job_id}")
+        else:
+            await mark_job_failed(job_id, "Keine Bilder konnten generiert werden")
+
+    except Exception as e:
+        print(f"Combined image generation failed: {str(e)}")
+        await mark_job_failed(job_id, str(e))
+
 
 # Health check
 @api_router.get("/health")
