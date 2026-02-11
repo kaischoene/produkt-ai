@@ -1,19 +1,14 @@
 import React, { useState, useRef, useCallback } from 'react';
-import axios from 'axios';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
 import { Textarea } from './components/ui/textarea';
 import { Badge } from './components/ui/badge';
 import { Progress } from './components/ui/progress';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-// Helper to get auth headers
-const authHeaders = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-});
+import {
+  hasApiKey, getCredits, deductCredits,
+  analyzeImage, combineImages
+} from './services/geminiService';
 
 // Helper to convert file to base64
 const fileToBase64 = (file) =>
@@ -190,7 +185,7 @@ const ImageThumb = ({ file, onRemove }) => {
 // ─────────────────────────────────────────────
 // Tool 1: Image-to-Prompt
 // ─────────────────────────────────────────────
-const ImageToPrompt = () => {
+const ImageToPrompt = ({ onNeedApiKey }) => {
   const [imageFile, setImageFile] = useState(null);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -201,21 +196,23 @@ const ImageToPrompt = () => {
       return;
     }
 
+    if (!hasApiKey()) {
+      if (onNeedApiKey) onNeedApiKey();
+      toast.error('Bitte zuerst einen API-Key eingeben.');
+      return;
+    }
+
     setIsAnalyzing(true);
     setGeneratedPrompt('');
 
     try {
       const base64 = await fileToBase64(imageFile);
-      const response = await axios.post(
-        `${API}/analyze-image`,
-        { image_data: base64 },
-        authHeaders()
-      );
-
-      setGeneratedPrompt(response.data.prompt);
+      const prompt = await analyzeImage(base64, imageFile.type || 'image/png');
+      setGeneratedPrompt(prompt);
       toast.success('Prompt erfolgreich generiert!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Analyse fehlgeschlagen');
+      console.error('Analyze error:', err);
+      toast.error(err.message || 'Analyse fehlgeschlagen. Pruefe deinen API-Key.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -281,7 +278,7 @@ const ImageToPrompt = () => {
           {isAnalyzing && (
             <div className="space-y-2">
               <Progress value={65} className="w-full" />
-              <p className="text-xs text-gray-500 text-center">KI analysiert Komposition, Farben, Beleuchtung, Texturen...</p>
+              <p className="text-xs text-gray-500 text-center">Nano Banana analysiert Komposition, Farben, Beleuchtung, Texturen...</p>
             </div>
           )}
 
@@ -308,7 +305,7 @@ const ImageToPrompt = () => {
 // ─────────────────────────────────────────────
 // Tool 2: Multi-Image Combine
 // ─────────────────────────────────────────────
-const MultiImageCombine = ({ user, onJobComplete }) => {
+const MultiImageCombine = ({ credits, onCreditsChange, onImagesGenerated, onNeedApiKey }) => {
   const [imageFiles, setImageFiles] = useState([]);
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -330,16 +327,18 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
   };
 
   const handleGenerate = async () => {
-    if (imageFiles.length === 0) {
-      toast.error('Bitte lade mindestens ein Bild hoch.');
+    if (!hasApiKey()) {
+      if (onNeedApiKey) onNeedApiKey();
+      toast.error('Bitte zuerst einen API-Key eingeben.');
       return;
     }
+
     if (!prompt.trim()) {
-      toast.error('Bitte beschreibe, was mit den Bildern passieren soll.');
+      toast.error('Bitte beschreibe, was erstellt werden soll.');
       return;
     }
-    if (user && user.credits < 4) {
-      toast.error('Nicht genuegend Credits! Du brauchst 4 Credits.');
+    if (credits < 1) {
+      toast.error('Nicht genuegend Credits!');
       return;
     }
 
@@ -347,58 +346,46 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
     setResultImages([]);
 
     try {
-      const base64Images = await Promise.all(imageFiles.map(fileToBase64));
-
-      const response = await axios.post(
-        `${API}/combine-images`,
-        { images: base64Images, prompt: prompt.trim() },
-        authHeaders()
+      const imageData = await Promise.all(
+        imageFiles.map(async (file) => ({
+          base64: await fileToBase64(file),
+          mimeType: file.type || 'image/png',
+        }))
       );
 
-      const { job_id } = response.data;
-      toast.success('Bildkombination gestartet!');
+      const result = await combineImages(imageData, prompt.trim());
 
-      // Poll for result
-      pollJobStatus(job_id);
+      // Deduct 1 credit
+      const newCredits = deductCredits(1);
+      if (onCreditsChange) onCreditsChange(newCredits);
+
+      // Convert to display format
+      const displayImages = result.images.map((img) => ({
+        dataUrl: img.dataUrl,
+      }));
+      setResultImages(displayImages);
+
+      // Also notify parent for gallery
+      if (onImagesGenerated) {
+        const galleryImages = result.images.map((img, idx) => ({
+          id: `combine_${Date.now()}_${idx}`,
+          dataUrl: img.dataUrl,
+          prompt: prompt.trim(),
+          width: 1024,
+          height: 1024,
+          status: 'completed',
+          created_at: new Date().toISOString(),
+        }));
+        onImagesGenerated(galleryImages);
+      }
+
+      toast.success(`Bild erfolgreich erstellt! (${newCredits} Credits verbleibend)`);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Kombination fehlgeschlagen');
+      console.error('Combine error:', err);
+      toast.error(err.message || 'Kombination fehlgeschlagen. Pruefe deinen API-Key.');
+    } finally {
       setIsGenerating(false);
     }
-  };
-
-  const pollJobStatus = async (jobId) => {
-    let attempts = 0;
-    const maxAttempts = 30;
-
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        toast.error('Zeitlimit ueberschritten. Bitte erneut versuchen.');
-        setIsGenerating(false);
-        return;
-      }
-
-      try {
-        const res = await axios.get(`${API}/image-status/${jobId}`, authHeaders());
-        const job = res.data;
-
-        if (job.status === 'completed') {
-          setResultImages(job.images || []);
-          toast.success('Bild erfolgreich erstellt!');
-          setIsGenerating(false);
-          if (onJobComplete) onJobComplete();
-        } else if (job.status === 'failed') {
-          toast.error(job.error_message || 'Generation fehlgeschlagen');
-          setIsGenerating(false);
-        } else {
-          attempts++;
-          setTimeout(poll, 2000);
-        }
-      } catch {
-        setIsGenerating(false);
-      }
-    };
-
-    poll();
   };
 
   return (
@@ -409,9 +396,9 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
             <LayersIcon />
           </div>
           <div>
-            <CardTitle className="text-xl">Bilder kombinieren</CardTitle>
+            <CardTitle className="text-xl">Bilder kombinieren / erstellen</CardTitle>
             <CardDescription className="text-sm mt-1">
-              Lade bis zu 5 Bilder hoch, beschreibe wie sie kombiniert werden sollen, und erhalte ein neues KI-Bild
+              Lade bis zu 5 Referenzbilder hoch, beschreibe dein Wunschbild, und Nano Banana erstellt es
             </CardDescription>
           </div>
         </CardHeader>
@@ -444,9 +431,9 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
                 <div className="dropzone-icon-wrapper">
                   <UploadIcon />
                 </div>
-                <p className="text-base font-semibold text-gray-800">Bis zu 5 Bilder hochladen</p>
-                <p className="text-sm text-gray-500">Ziehe sie hierher oder klicke zum Auswaehlen</p>
-                <Badge variant="outline" className="mt-2 text-xs">PNG, JPG, WEBP</Badge>
+                <p className="text-base font-semibold text-gray-800">Bis zu 5 Referenzbilder hochladen</p>
+                <p className="text-sm text-gray-500">Oder einfach nur einen Prompt eingeben fuer Bildgenerierung ohne Referenz</p>
+                <Badge variant="outline" className="mt-2 text-xs">PNG, JPG, WEBP (optional)</Badge>
               </div>
             )}
           </DropZone>
@@ -454,16 +441,16 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
           {/* Prompt Input */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700">
-              Beschreibung der Kombination
+              Beschreibung / Prompt
             </label>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="z.B. Kombiniere die Produkte zu einer einzigen Szene auf einem eleganten Marmortisch mit warmem Licht..."
+              placeholder="z.B. Erstelle ein professionelles Produktfoto auf einem eleganten Marmortisch mit warmem Licht..."
               className="min-h-[100px] studio-textarea"
             />
             <p className="text-xs text-gray-400">
-              Erklaere genau, wie die Bilder zusammengefuegt werden sollen.
+              Beschreibe genau, was du erstellen moechtest. Du kannst Referenzbilder hochladen oder nur Text verwenden.
             </p>
           </div>
 
@@ -491,17 +478,17 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
-            disabled={imageFiles.length === 0 || !prompt.trim() || isGenerating}
+            disabled={!prompt.trim() || isGenerating || credits < 1}
             className="w-full h-12 text-base studio-btn-combine"
           >
             {isGenerating ? (
               <>
-                <LoaderIcon /><span className="ml-2">Bilder werden kombiniert...</span>
+                <LoaderIcon /><span className="ml-2">Nano Banana generiert...</span>
               </>
             ) : (
               <>
                 <LayersIcon /><span className="ml-2">
-                  Neues Bild erstellen {user ? `(${user.credits} Credits)` : ''}
+                  Bild erstellen ({credits} Credits)
                 </span>
               </>
             )}
@@ -510,7 +497,7 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
           {isGenerating && (
             <div className="space-y-2">
               <Progress value={50} className="w-full" />
-              <p className="text-xs text-gray-500 text-center">Nano Banana kombiniert deine Bilder...</p>
+              <p className="text-xs text-gray-500 text-center">Nano Banana generiert dein Bild...</p>
             </div>
           )}
 
@@ -524,12 +511,9 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
                 {resultImages.map((img, idx) => (
                   <div key={idx} className="result-image-card">
                     <img
-                      src={`${BACKEND_URL}${img.url}`}
+                      src={img.dataUrl}
                       alt={`Ergebnis ${idx + 1}`}
                       className="result-image"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
                     />
                     <div className="result-image-overlay">
                       <Button
@@ -537,8 +521,8 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
                         variant="secondary"
                         onClick={() => {
                           const link = document.createElement('a');
-                          link.href = `${BACKEND_URL}${img.url}`;
-                          link.download = `combined_${idx + 1}.png`;
+                          link.href = img.dataUrl;
+                          link.download = `produktai_${Date.now()}_${idx + 1}.png`;
                           link.click();
                         }}
                       >
@@ -560,7 +544,7 @@ const MultiImageCombine = ({ user, onJobComplete }) => {
 // ─────────────────────────────────────────────
 // Main CreativeStudio Component
 // ─────────────────────────────────────────────
-const CreativeStudio = ({ user, onJobComplete }) => {
+const CreativeStudio = ({ credits, onCreditsChange, onImagesGenerated, onNeedApiKey }) => {
   const [activeTool, setActiveTool] = useState('analyze');
 
   return (
@@ -573,7 +557,7 @@ const CreativeStudio = ({ user, onJobComplete }) => {
             <span>Creative Studio</span>
           </h2>
           <p className="studio-subtitle">
-            KI-gesteuerte Bildanalyse und Kombination
+            Powered by Nano Banana (Gemini) - Bildanalyse, Generierung und Kombination
           </p>
         </div>
       </div>
@@ -596,16 +580,23 @@ const CreativeStudio = ({ user, onJobComplete }) => {
         >
           <LayersIcon />
           <div className="text-left">
-            <span className="studio-tool-tab-title">Bilder kombinieren</span>
-            <span className="studio-tool-tab-desc">Bis zu 5 Bilder zusammenfuegen</span>
+            <span className="studio-tool-tab-title">Bilder erstellen</span>
+            <span className="studio-tool-tab-desc">Mit oder ohne Referenzbilder</span>
           </div>
         </button>
       </div>
 
       {/* Active Tool */}
       <div className="studio-content">
-        {activeTool === 'analyze' && <ImageToPrompt />}
-        {activeTool === 'combine' && <MultiImageCombine user={user} onJobComplete={onJobComplete} />}
+        {activeTool === 'analyze' && <ImageToPrompt onNeedApiKey={onNeedApiKey} />}
+        {activeTool === 'combine' && (
+          <MultiImageCombine
+            credits={credits}
+            onCreditsChange={onCreditsChange}
+            onImagesGenerated={onImagesGenerated}
+            onNeedApiKey={onNeedApiKey}
+          />
+        )}
       </div>
     </div>
   );
