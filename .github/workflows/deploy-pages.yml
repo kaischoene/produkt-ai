@@ -1,8 +1,8 @@
-name: Deploy Noovi Website to GitHub Pages
+name: Deploy Website to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
   workflow_dispatch:
 
 permissions:
