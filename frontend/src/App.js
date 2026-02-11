@@ -5,6 +5,11 @@ import './App.css';
 import NooviLandingPage from './NooviLandingPage';
 import YouMediaWebsite from './YouMediaWebsite';
 import CreativeStudio from './CreativeStudio';
+import {
+  getApiKey, setApiKey as saveApiKey, hasApiKey,
+  getCredits, deductCredits, setCredits as saveCredits,
+  generateImage, generateWithReferences, analyzeImage, combineImages
+} from './services/geminiService';
 
 // Import Shadcn UI components
 import { Button } from './components/ui/button';
@@ -36,6 +41,7 @@ const Settings = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 const CheckCircle = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
 const AlertTriangle = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="m12 17 .01 0"/></svg>
 const Loader2 = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+const KeyIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -255,9 +261,18 @@ const AuthPage = () => {
   );
 };
 
+// Helper: Convert file to base64
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
 // Main Dashboard
 const Dashboard = () => {
-  const { user, logout, fetchUser } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('studio');
   const [generationForm, setGenerationForm] = useState({
     prompt: '',
@@ -271,43 +286,37 @@ const Dashboard = () => {
     productImage: null
   });
   const [sceneIdeas, setSceneIdeas] = useState([
-    "Luxuriöser Marmor-Hintergrund mit sanftem goldenen Licht",
-    "Minimalistisches weißes Studio-Setup mit dramatischen Schatten", 
+    "Luxurioser Marmor-Hintergrund mit sanftem goldenen Licht",
+    "Minimalistisches weisses Studio-Setup mit dramatischen Schatten",
     "Rustikaler Holztisch mit warmem Umgebungslicht",
     "Moderner Gradient-Hintergrund mit Neon-Akzenten",
-    "Natürliche Outdoor-Umgebung mit durch Bäume filterfndem Sonnenlicht",
+    "Natuerliche Outdoor-Umgebung mit Sonnenlicht durch Baeume",
     "Industrieller Beton-Hintergrund mit stimmungsvoller Beleuchtung",
     "Elegante Stoffdrapierung mit weichem diffusem Licht",
-    "Vintage-Lederoberfläche mit warmem Tungsten-Glanz"
+    "Vintage-Lederoberflaeche mit warmem Tungsten-Glanz"
   ]);
   const [isLoadingIdeas, setIsLoadingIdeas] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState([]);
-  const [subscriptionPlans, setSubscriptionPlans] = useState({});
 
-  useEffect(() => {
-    fetchSubscriptionPlans();
-    fetchUserImages();
-  }, []);
+  // Local credits & API key state
+  const [credits, setLocalCredits] = useState(() => getCredits());
+  const [apiKeyInput, setApiKeyInput] = useState(() => getApiKey());
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(() => !hasApiKey());
 
-  const fetchSubscriptionPlans = async () => {
-    try {
-      const response = await axios.get(`${API}/subscription/plans`);
-      setSubscriptionPlans(response.data);
-    } catch (error) {
-      console.error('Abo-Pläne konnten nicht geladen werden:', error);
-    }
+  const updateCredits = (newAmount) => {
+    saveCredits(newAmount);
+    setLocalCredits(newAmount);
   };
 
-  const fetchUserImages = async () => {
-    try {
-      const response = await axios.get(`${API}/user/images`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      setGeneratedImages(response.data);
-    } catch (error) {
-      console.error('Benutzerbilder konnten nicht geladen werden:', error);
+  const handleSaveApiKey = () => {
+    if (!apiKeyInput.trim()) {
+      toast.error('Bitte gib einen gültigen API-Key ein.');
+      return;
     }
+    saveApiKey(apiKeyInput.trim());
+    setShowApiKeyDialog(false);
+    toast.success('API-Key gespeichert!');
   };
 
   const generateSceneIdeas = async (description) => {
@@ -318,18 +327,17 @@ const Dashboard = () => {
 
     setIsLoadingIdeas(true);
     try {
-      // Generate enhanced scene ideas based on description
       const enhancedIdeas = [
         `Professionelle ${description} mit Studio-Beleuchtung und sauberer Komposition`,
         `${description} in einer modernen minimalistischen Umgebung mit weichen Schatten`,
-        `Künstlerische Interpretation von ${description} mit dramatischen Lichteffekten`,
-        `${description} mit natürlichem Umgebungslicht und organischen Texturen`,
+        `Kuenstlerische Interpretation von ${description} mit dramatischen Lichteffekten`,
+        `${description} mit natuerlichem Umgebungslicht und organischen Texturen`,
         `Kinematische ${description} mit dynamischen Winkeln und reichen Farben`
       ];
-      
+
       setSceneIdeas(enhancedIdeas);
       document.getElementById('scene-description-input').value = '';
-      toast.success('5 neue Szenenideen für Sie generiert!');
+      toast.success('5 neue Szenenideen fuer Sie generiert!');
     } catch (error) {
       toast.error('Szenenideen konnten nicht generiert werden');
     } finally {
@@ -338,17 +346,22 @@ const Dashboard = () => {
   };
 
   const getCreditsColor = () => {
-    if (!user) return 'text-gray-600';
-    if (user.credits <= 0) return 'text-red-600';
-    if (user.credits <= 5) return 'text-orange-600';
+    if (credits <= 0) return 'text-red-600';
+    if (credits <= 10) return 'text-orange-600';
     return 'text-green-600';
   };
 
   const handleGenerate = async (e) => {
     e.preventDefault();
-    
-    if (!user || user.credits < 4) {
-      toast.error('Nicht genügend Credits! Sie benötigen 4 Credits für eine Bildgenerierung.');
+
+    if (!hasApiKey()) {
+      setShowApiKeyDialog(true);
+      toast.error('Bitte zuerst einen Google AI API-Key eingeben.');
+      return;
+    }
+
+    if (credits < 1) {
+      toast.error('Keine Credits mehr! Bitte kaufe ein Abonnement.');
       setActiveTab('subscription');
       return;
     }
@@ -359,100 +372,86 @@ const Dashboard = () => {
     }
 
     setIsGenerating(true);
-    
+
     try {
-      // Create enhanced prompt based on form data
       let enhancedPrompt = generationForm.prompt;
-      
+
       if (generationForm.productImage) {
-        enhancedPrompt = `Professionelle Produktfotografie des hochgeladenen Produkts in: ${generationForm.prompt || 'einer sauberen, professionellen Umgebung'}`;
+        enhancedPrompt = `Professional product photography of the uploaded product in: ${generationForm.prompt || 'a clean, professional environment'}`;
       }
-      
-      // Add style and lighting information
-      enhancedPrompt += `. Stil: ${generationForm.style}. Beleuchtung: ${generationForm.lighting}. Kamerawinkel: ${generationForm.cameraAngle}.`;
-      
-      const requestData = {
-        prompt: enhancedPrompt,
+
+      enhancedPrompt += `. Style: ${generationForm.style}. Lighting: ${generationForm.lighting}. Camera angle: ${generationForm.cameraAngle}.`;
+
+      let result;
+      if (generationForm.productImage) {
+        const base64 = await fileToBase64(generationForm.productImage);
+        result = await generateWithReferences(enhancedPrompt, [{ base64, mimeType: generationForm.productImage.type }], {
+          aspectRatio: generationForm.aspectRatio
+        });
+      } else {
+        result = await generateImage(enhancedPrompt, {
+          aspectRatio: generationForm.aspectRatio
+        });
+      }
+
+      // Deduct 1 credit per generation
+      const newCredits = deductCredits(1);
+      setLocalCredits(newCredits);
+
+      // Add generated images to gallery
+      const newImages = result.images.map((img, idx) => ({
+        id: `gen_${Date.now()}_${idx}`,
+        dataUrl: img.dataUrl,
+        prompt: generationForm.prompt,
         negative_prompt: generationForm.negative_prompt,
         width: generationForm.width,
-        height: generationForm.height
-      };
-      
-      const response = await axios.post(`${API}/generate-image`, requestData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      const { job_id } = response.data;
-      toast.success('Bildgenerierung gestartet! 4 professionelle Bilder werden erstellt...');
-      
-      // Poll for completion
-      pollImageStatus(job_id);
-      await fetchUser(); // Refresh user credits
-      
+        height: generationForm.height,
+        status: 'completed',
+        created_at: new Date().toISOString()
+      }));
+
+      setGeneratedImages(prev => [...newImages, ...prev]);
+      toast.success(`Bild erfolgreich generiert! (${newCredits} Credits verbleibend)`);
+      setActiveTab('gallery');
+
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Bildgenerierung fehlgeschlagen');
+      console.error('Generation error:', error);
+      toast.error(error.message || 'Bildgenerierung fehlgeschlagen. Pruefe deinen API-Key.');
+    } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const pollImageStatus = async (jobId) => {
-    const maxAttempts = 30;
-    let attempts = 0;
-    
-    const poll = async () => {
-      if (attempts >= maxAttempts) {
-        toast.error('Bildgenerierung hat zu lange gedauert. Bitte versuchen Sie es erneut.');
-        setIsGenerating(false);
-        return;
-      }
-      
-      try {
-        const response = await axios.get(`${API}/image-status/${jobId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        
-        const job = response.data;
-        
-        if (job.status === 'completed') {
-          toast.success('4 Bilder erfolgreich generiert!');
-          fetchUserImages();
-          setIsGenerating(false);
-          setActiveTab('gallery');
-        } else if (job.status === 'failed') {
-          toast.error(job.error_message || 'Bildgenerierung fehlgeschlagen');
-          setIsGenerating(false);
-        } else {
-          attempts++;
-          setTimeout(poll, 2000);
-        }
-      } catch (error) {
-        console.error('Bildstatus konnte nicht überprüft werden:', error);
-        setIsGenerating(false);
-      }
-    };
-    
-    poll();
-  };
-
-  const handleSubscription = async (planId) => {
-    try {
-      const response = await axios.post(`${API}/subscription/checkout?plan_id=${planId}`, 
-        {}, 
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        }
-      );
-      
-      // Redirect to Stripe checkout
-      window.location.href = response.data.checkout_url;
-      
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Checkout-Sitzung konnte nicht erstellt werden');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* API Key Dialog */}
+      <Dialog open={showApiKeyDialog} onOpenChange={setShowApiKeyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Google AI API-Key eingeben</DialogTitle>
+            <DialogDescription>
+              Du brauchst einen Google AI API-Key fuer die Bildgenerierung mit Nano Banana (Gemini).
+              Erstelle einen kostenlos auf ai.google.dev
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="api-key">API-Key</Label>
+              <Input
+                id="api-key"
+                type="password"
+                placeholder="AIza..."
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleSaveApiKey} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600">
+              Speichern
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -463,33 +462,35 @@ const Dashboard = () => {
               </div>
               <h1 className="text-xl font-bold text-gray-900">ProduktAI</h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
-              {user ? (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <Zap className="w-4 h-4 text-indigo-600" />
-                    <span className={`font-semibold ${getCreditsColor()}`}>
-                      {user.credits} Credits
-                    </span>
-                  </div>
+              <div className="flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-indigo-600" />
+                <span className={`font-semibold ${getCreditsColor()}`}>
+                  {credits} Credits
+                </span>
+              </div>
 
-                  <Badge variant={user.subscription_status === 'active' ? 'default' : 'secondary'}>
-                    {user.subscription_plan || 'Kostenlos'}
-                  </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowApiKeyDialog(true)}
+                className={hasApiKey() ? 'text-green-600' : 'text-orange-600'}
+              >
+                <KeyIcon className="w-4 h-4 mr-1" />
+                {hasApiKey() ? 'Key OK' : 'API-Key'}
+              </Button>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={logout}
-                    className="text-gray-600 hover:text-gray-900"
-                  >
-                    <LogOut className="w-4 h-4 mr-1" />
-                    Abmelden
-                  </Button>
-                </>
-              ) : (
-                <Badge variant="secondary">Demo-Modus</Badge>
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Abmelden
+                </Button>
               )}
             </div>
           </div>
@@ -521,11 +522,10 @@ const Dashboard = () => {
           {/* Studio Tab */}
           <TabsContent value="studio" className="space-y-6">
             <CreativeStudio
-              user={user}
-              onJobComplete={() => {
-                fetchUserImages();
-                fetchUser();
-              }}
+              credits={credits}
+              onCreditsChange={setLocalCredits}
+              onImagesGenerated={(newImages) => setGeneratedImages(prev => [...newImages, ...prev])}
+              onNeedApiKey={() => setShowApiKeyDialog(true)}
             />
           </TabsContent>
 
@@ -817,17 +817,17 @@ const Dashboard = () => {
                   <Button 
                     onClick={handleGenerate}
                     className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" 
-                    disabled={isGenerating || !user || (user && user.credits < 4)}
+                    disabled={isGenerating || credits < 1}
                   >
                     {isGenerating ? (
                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
                     ) : (
                       <ImageIcon className="w-5 h-5 mr-2" />
                     )}
-                    {isGenerating ? 'Ihre 4 Szenen werden generiert...' : `4 Bilder generieren (${user ? user.credits : 0} Credits verbleibend)`}
+                    {isGenerating ? 'Bild wird generiert...' : `Bild generieren (${credits} Credits verbleibend)`}
                   </Button>
 
-                  {(!user || user.credits < 4) && (
+                  {credits < 1 && (
                     <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                       <div className="flex items-center space-x-2 text-orange-700">
                         <AlertTriangle className="w-5 h-5" />
@@ -894,7 +894,7 @@ const Dashboard = () => {
                           {generatedImages.length} Bilder generiert
                         </Badge>
                         <Badge variant="outline" className="text-sm">
-                          {user ? user.monthly_credits_used : 0} Credits diesen Monat verwendet
+                          {credits} Credits verbleibend
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -914,21 +914,20 @@ const Dashboard = () => {
                         <Card key={image.id} className="group overflow-hidden hover:shadow-lg transition-all duration-200">
                           <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
                             {/* ECHTES BILD ANZEIGEN */}
-                            {image.image_url ? (
-                              <img 
-                                src={`${BACKEND_URL}${image.image_url}`}
+                            {(image.dataUrl || image.image_url) ? (
+                              <img
+                                src={image.dataUrl || `${BACKEND_URL}${image.image_url}`}
                                 alt={image.prompt}
                                 className="w-full h-full object-cover rounded-t-lg"
                                 onError={(e) => {
-                                  // Fallback to placeholder if image fails to load
                                   e.target.style.display = 'none';
-                                  e.target.nextElementSibling.style.display = 'flex';
+                                  if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
                                 }}
                               />
                             ) : null}
                             
                             {/* Fallback Placeholder (only shown if image fails to load) */}
-                            <div className={`absolute inset-0 flex items-center justify-center ${image.image_url ? 'hidden' : ''}`}>
+                            <div className={`absolute inset-0 flex items-center justify-center ${(image.dataUrl || image.image_url) ? 'hidden' : ''}`}>
                               <div className="text-center space-y-3">
                                 <div className="w-16 h-16 bg-white/80 rounded-2xl flex items-center justify-center mx-auto">
                                   <ImageIcon className="w-8 h-8 text-gray-600" />
@@ -949,10 +948,10 @@ const Dashboard = () => {
                                   size="sm" 
                                   variant="secondary"
                                   onClick={() => {
-                                    if (image.image_url) {
-                                      // Download the image
+                                    const src = image.dataUrl || (image.image_url ? `${BACKEND_URL}${image.image_url}` : null);
+                                    if (src) {
                                       const link = document.createElement('a');
-                                      link.href = `${BACKEND_URL}${image.image_url}`;
+                                      link.href = src;
                                       link.download = `produktai_${image.id}.png`;
                                       link.click();
                                     }
@@ -1056,67 +1055,22 @@ const Dashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Crown className="w-5 h-5" />
-                  <span>Abonnement-Pläne</span>
+                  <span>Credits verwalten</span>
                 </CardTitle>
                 <CardDescription>
-                  Wählen Sie den perfekten Plan für Ihre kreativen Bedürfnisse
+                  Du hast aktuell {credits} Credits. Zahlungsintegration kommt bald!
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {Object.entries(subscriptionPlans).map(([planId, plan]) => (
-                    <Card key={planId} className={`relative ${user.subscription_plan === planId ? 'ring-2 ring-indigo-500' : ''}`}>
-                      {planId === 'premium' && (
-                        <Badge className="absolute -top-2 left-4 bg-indigo-600">
-                          <Star className="w-3 h-3 mr-1" />
-                          Beliebt
-                        </Badge>
-                      )}
-                      
-                      <CardHeader className="text-center">
-                        <CardTitle className="text-xl">{plan.name}</CardTitle>
-                        <div className="text-3xl font-bold text-indigo-600">
-                          €{plan.price}
-                          <span className="text-sm text-gray-500 font-normal">/Monat</span>
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-gray-900">
-                            {plan.monthly_credits}
-                          </div>
-                          <div className="text-sm text-gray-600">Bilder pro Monat</div>
-                        </div>
-                        
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span>Hochwertige Generierung</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span>Benutzerdefinierte Dimensionen</span>
-                          </div>
-                          {planId !== 'basic' && (
-                            <div className="flex items-center space-x-2">
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                              <span>Priorisierte Verarbeitung</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <Button 
-                          className="w-full"
-                          variant={user.subscription_plan === planId ? 'secondary' : 'default'}
-                          onClick={() => handleSubscription(planId)}
-                          disabled={user.subscription_plan === planId}
-                        >
-                          {user.subscription_plan === planId ? 'Aktueller Plan' : 'Plan wählen'}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
+                <div className="text-center py-8 space-y-4">
+                  <div className="text-6xl font-bold text-indigo-600">{credits}</div>
+                  <p className="text-gray-600">Credits verbleibend</p>
+                  <p className="text-sm text-gray-500">1 Credit = 1 Bildgenerierung</p>
+                  <div className="pt-4">
+                    <Badge variant="outline" className="text-sm">
+                      Zahlungsintegration kommt bald
+                    </Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>
